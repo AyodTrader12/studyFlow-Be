@@ -2,6 +2,7 @@ import express, { Application,Request, Response, NextFunction } from "express"
 import cors from "cors"
 import dotenv from "dotenv"
 import { connectDB } from "./utils/dbConfig"
+import { startReminderCron } from "./services/ReminderCron"
 
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -87,7 +88,7 @@ async function bootstrap(): Promise<void> {
     console.log(`🔗 Client URL  : ${process.env.CLIENT_URL ?? "http://localhost:5173"}\n`);
   });
 
-  // startReminderCron();
+  startReminderCron();
   // startInactivityCron();
 }
 

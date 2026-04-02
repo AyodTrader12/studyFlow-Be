@@ -17,6 +17,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const dbConfig_1 = require("./utils/dbConfig");
+const ReminderCron_1 = require("./services/ReminderCron");
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 dotenv_1.default.config();
@@ -86,7 +87,7 @@ function bootstrap() {
             console.log(`📚 Environment : ${(_a = process.env.NODE_ENV) !== null && _a !== void 0 ? _a : "development"}`);
             console.log(`🔗 Client URL  : ${(_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "http://localhost:5173"}\n`);
         });
-        // startReminderCron();
+        (0, ReminderCron_1.startReminderCron)();
         // startInactivityCron();
     });
 }
