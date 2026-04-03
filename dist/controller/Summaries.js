@@ -14,12 +14,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 // src/routes/summaries.ts
 const express_1 = require("express");
-const auth_js_1 = require("../middleware/auth.js");
+const Auth_js_1 = require("../middleware/Auth.js");
 const Resource_js_1 = __importDefault(require("../models/Resource.js"));
 const Summary_js_1 = __importDefault(require("../models/Summary.js"));
-const geminiService_js_1 = require("../services/geminiService.js");
+const GeminiService_js_1 = require("../services/GeminiService.js");
 const router = (0, express_1.Router)();
-router.get("/:resourceId", auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get("/:resourceId", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const summary = yield Summary_js_1.default.findOne({ resourceId: req.params.resourceId });
         if (!summary) {
@@ -32,14 +32,14 @@ router.get("/:resourceId", auth_js_1.protect, (req, res) => __awaiter(void 0, vo
         res.status(500).json({ message: "Failed to fetch summary." });
     }
 }));
-router.post("/:resourceId/generate", auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post("/:resourceId/generate", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const resource = yield Resource_js_1.default.findById(req.params.resourceId);
         if (!resource) {
             res.status(404).json({ message: "Resource not found." });
             return;
         }
-        const summary = yield (0, geminiService_js_1.generateResourceSummary)({
+        const summary = yield (0, GeminiService_js_1.generateResourceSummary)({
             resourceId: resource._id, title: resource.title, subject: resource.subject,
             level: resource.level, type: resource.type, content: resource.content, url: resource.url,
         });

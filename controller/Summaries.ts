@@ -1,9 +1,9 @@
 // src/routes/summaries.ts
 import { Router, Response } from "express";
-import { protect } from "../middleware/auth.js";
+import { protect } from "../middleware/Auth.js";
 import Resource from "../models/Resource.js";
 import Summary from "../models/Summary.js";
-import { generateResourceSummary } from "../services/geminiService.js";
+import { generateResourceSummary } from "../services/GeminiService.js";
 import type { AuthRequest } from "../types/index.js";
 
 const router = Router();
