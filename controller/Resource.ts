@@ -1,11 +1,11 @@
 // src/routes/resources.ts
 import { Router, Response } from "express";
-import { protect } from "../middleware/Auth.js";
-import { isAdmin } from "../middleware/isAdmin.js";
-import Resource from "../models/Resource.js";
+import { protect } from "../middleware/Auth";
+import { isAdmin } from "../middleware/isAdmin";
+import Resource from "../models/Resource";
 
-import type { AuthRequest, ResourceQueryParams } from "../types/index.js";
-import { fetchYouTubeMetadata } from "../services/YoutubeService.js";
+import type { AuthRequest, ResourceQueryParams } from "../types/index";
+import { fetchYouTubeMetadata } from "../services/YoutubeService";
 
 const router = Router();
 

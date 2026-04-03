@@ -1,10 +1,10 @@
 // src/routes/bookmarks.ts
 import { Router, Response } from "express";
-import { protect } from "../middleware/Auth.js";
-import Bookmark from "../models/Bookmark.js";
-import Resource from "../models/Resource.js";
-import user from "../models/user.js";
-import type { AuthRequest } from "../types/index.js";
+import { protect } from "../middleware/Auth";
+import Bookmark from "../models/Bookmark";
+import Resource from "../models/Resource";
+import user from "../models/user";
+import type { AuthRequest } from "../types/index";
 
 const router = Router();
 

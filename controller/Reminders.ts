@@ -1,8 +1,8 @@
 // src/routes/reminders.ts
 import { Router, Response } from "express";
-import { protect } from "../middleware/Auth.js";
-import Reminder from "../models/Reminder.js";
-import type { AuthRequest } from "../types/index.js";
+import { protect } from "../middleware/Auth";
+import Reminder from "../models/Reminder";
+import type { AuthRequest } from "../types/index";
 
 const router = Router();
 

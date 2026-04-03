@@ -1,11 +1,11 @@
 // src/services/reminderCron.ts
 import cron from "node-cron";
-import Reminder from "../models/Reminder.js";
-import User from "../models/user.js";
+import Reminder from "../models/Reminder";
+import User from "../models/user";
 import {
   sendReminderEmail,
   sendInactivityEmail,
-} from "../services/EmailService.js";
+} from "../services/EmailService";
 
 // Helper function to pad numbers with leading zeros
 function pad(num: number): string {

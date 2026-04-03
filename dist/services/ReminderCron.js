@@ -16,9 +16,9 @@ exports.startReminderCron = startReminderCron;
 exports.startInactivityCron = startInactivityCron;
 // src/services/reminderCron.ts
 const node_cron_1 = __importDefault(require("node-cron"));
-const Reminder_js_1 = __importDefault(require("../models/Reminder.js"));
-const user_js_1 = __importDefault(require("../models/user.js"));
-const EmailService_js_1 = require("../services/EmailService.js");
+const Reminder_1 = __importDefault(require("../models/Reminder"));
+const user_1 = __importDefault(require("../models/user"));
+const EmailService_1 = require("../services/EmailService");
 // Helper function to pad numbers with leading zeros
 function pad(num) {
     return num.toString().padStart(2, "0");
@@ -30,7 +30,7 @@ function startReminderCron() {
             const now = new Date();
             const today = now.toISOString().slice(0, 10); // "YYYY-MM-DD"
             const nowTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-            const dueReminders = yield Reminder_js_1.default.find({
+            const dueReminders = yield Reminder_1.default.find({
                 date: today,
                 time: nowTime,
                 emailSent: false,
@@ -39,10 +39,10 @@ function startReminderCron() {
                 return;
             console.log(`⏰ Processing ${dueReminders.length} reminder(s)...`);
             for (const reminder of dueReminders) {
-                const user = yield user_js_1.default.findById(reminder.userId);
+                const user = yield user_1.default.findById(reminder.userId);
                 if (!user || !user.emailPreferences.reminderEmails)
                     continue;
-                yield (0, EmailService_js_1.sendReminderEmail)({
+                yield (0, EmailService_1.sendReminderEmail)({
                     to: user.email,
                     name: user.displayName,
                     reminderText: reminder.text,
@@ -66,7 +66,7 @@ function startInactivityCron() {
     node_cron_1.default.schedule("0 9 * * *", () => __awaiter(this, void 0, void 0, function* () {
         try {
             const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-            const inactiveUsers = yield user_js_1.default.find({
+            const inactiveUsers = yield user_1.default.find({
                 "streak.lastStudied": { $lt: threeDaysAgo },
                 "emailPreferences.inactivityNudge": true,
             });
@@ -75,7 +75,7 @@ function startInactivityCron() {
                 if (!user.streak.lastStudied)
                     continue;
                 const daysSince = Math.floor((Date.now() - user.streak.lastStudied.getTime()) / (1000 * 60 * 60 * 24));
-                yield (0, EmailService_js_1.sendInactivityEmail)({
+                yield (0, EmailService_1.sendInactivityEmail)({
                     to: user.email,
                     name: user.displayName,
                     daysSinceLastStudy: daysSince,

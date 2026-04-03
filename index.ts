@@ -2,8 +2,13 @@ import express, { Application,Request, Response, NextFunction } from "express"
 import cors from "cors"
 import dotenv from "dotenv"
 import { connectDB } from "./utils/dbConfig"
-import { startReminderCron } from "./services/ReminderCron"
-
+import { startReminderCron,startInactivityCron } from "./services/ReminderCron"
+import authRoutes from "./controller/Auth";
+import resourceRoutes from "./controller/Resource";
+import bookmarkRoutes from "./controller/Bookmarks";
+import progressRoutes from "./controller/Progress";
+import reminderRoutes from "./controller/Reminders";
+import summaryRoutes from "./controller/Summaries";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
@@ -60,12 +65,12 @@ app.get("/health", (_req: Request, res: Response) => {
 });
 
 // // ── Routes ────────────────────────────────────────────────────────────────────
-// app.use("/api/auth",      authRoutes);
-// app.use("/api/resources", resourceRoutes);
-// app.use("/api/bookmarks", bookmarkRoutes);
-// app.use("/api/progress",  progressRoutes);
-// app.use("/api/reminders", reminderRoutes);
-// app.use("/api/summaries", summaryRoutes);
+app.use("/api/auth",      authRoutes);
+app.use("/api/resources", resourceRoutes);
+app.use("/api/bookmarks", bookmarkRoutes);
+app.use("/api/progress",  progressRoutes);
+app.use("/api/reminders", reminderRoutes);
+app.use("/api/summaries", summaryRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req: Request, res: Response) => {
@@ -89,7 +94,7 @@ async function bootstrap(): Promise<void> {
   });
 
   startReminderCron();
-  // startInactivityCron();
+  startInactivityCron();
 }
 
 bootstrap().catch((err: Error) => {

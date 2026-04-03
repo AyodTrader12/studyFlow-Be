@@ -18,6 +18,12 @@ const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const dbConfig_1 = require("./utils/dbConfig");
 const ReminderCron_1 = require("./services/ReminderCron");
+const Auth_1 = __importDefault(require("./controller/Auth"));
+const Resource_1 = __importDefault(require("./controller/Resource"));
+const Bookmarks_1 = __importDefault(require("./controller/Bookmarks"));
+const Progress_1 = __importDefault(require("./controller/Progress"));
+const Reminders_1 = __importDefault(require("./controller/Reminders"));
+const Summaries_1 = __importDefault(require("./controller/Summaries"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 dotenv_1.default.config();
@@ -62,12 +68,12 @@ app.get("/health", (_req, res) => {
     });
 });
 // // ── Routes ────────────────────────────────────────────────────────────────────
-// app.use("/api/auth",      authRoutes);
-// app.use("/api/resources", resourceRoutes);
-// app.use("/api/bookmarks", bookmarkRoutes);
-// app.use("/api/progress",  progressRoutes);
-// app.use("/api/reminders", reminderRoutes);
-// app.use("/api/summaries", summaryRoutes);
+app.use("/api/auth", Auth_1.default);
+app.use("/api/resources", Resource_1.default);
+app.use("/api/bookmarks", Bookmarks_1.default);
+app.use("/api/progress", Progress_1.default);
+app.use("/api/reminders", Reminders_1.default);
+app.use("/api/summaries", Summaries_1.default);
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
     res.status(404).json({ message: `Route ${req.method} ${req.path} not found.` });
@@ -88,7 +94,7 @@ function bootstrap() {
             console.log(`🔗 Client URL  : ${(_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "http://localhost:5173"}\n`);
         });
         (0, ReminderCron_1.startReminderCron)();
-        // startInactivityCron();
+        (0, ReminderCron_1.startInactivityCron)();
     });
 }
 bootstrap().catch((err) => {

@@ -45,12 +45,12 @@ export async function protect(
     req.user = user;
 
     next();
-  } catch (error) {
+  } catch (error:any) {
     const err = error as { code?: string };
     if (err.code === "auth/id-token-expired") {
       res.status(401).json({ message: "Session expired. Please log in again." });
       return;
     }
-    res.status(401).json({ message: "Invalid token." });
+    res.status(401).json({ message: error.message });
   }
 }

@@ -1,9 +1,9 @@
 // src/routes/auth.ts
 import { Router, Response } from "express";
-import { protect } from "../middleware/Auth.js";
+import { protect } from "../middleware/Auth";
 import user from "../models/user.js";
-import { sendEmailVerifiedConfirmation,sendWelcomeEmail } from "../services/EmailService.js";
-import type { AuthRequest, IUserDocument } from "../types/index.js";
+import { sendEmailVerifiedConfirmation,sendWelcomeEmail } from "../services/EmailService";
+import type { AuthRequest, IUserDocument } from "../types/index";
 
 const router = Router();
 

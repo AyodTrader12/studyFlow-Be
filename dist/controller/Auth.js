@@ -11,8 +11,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 // src/routes/auth.ts
 const express_1 = require("express");
-const Auth_js_1 = require("../middleware/Auth.js");
-const EmailService_js_1 = require("../services/EmailService.js");
+const Auth_1 = require("../middleware/Auth");
+const EmailService_1 = require("../services/EmailService");
 const router = (0, express_1.Router)();
 function sanitizeUser(user) {
     return {
@@ -24,7 +24,7 @@ function sanitizeUser(user) {
         createdAt: user.createdAt,
     };
 }
-router.post("/sync", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post("/sync", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { classLevel, subjects } = req.body;
         const user = req.user;
@@ -34,7 +34,7 @@ router.post("/sync", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, 
         if (subjects)
             user.subjects = subjects;
         if (!user.emailPreferences.welcomeSent) {
-            yield (0, EmailService_js_1.sendWelcomeEmail)({ to: user.email, name: user.displayName });
+            yield (0, EmailService_1.sendWelcomeEmail)({ to: user.email, name: user.displayName });
             user.emailPreferences.welcomeSent = true;
             isNewUser = true;
         }
@@ -46,13 +46,13 @@ router.post("/sync", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, 
         res.status(500).json({ message: "Failed to sync account." });
     }
 }));
-router.post("/verify-email", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post("/verify-email", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.user;
         if (!user.isVerified) {
             user.isVerified = true;
             yield user.save();
-            yield (0, EmailService_js_1.sendEmailVerifiedConfirmation)({ to: user.email, name: user.displayName });
+            yield (0, EmailService_1.sendEmailVerifiedConfirmation)({ to: user.email, name: user.displayName });
         }
         res.status(200).json({ message: "Email verified.", user: sanitizeUser(user) });
     }
@@ -60,10 +60,10 @@ router.post("/verify-email", Auth_js_1.protect, (req, res) => __awaiter(void 0, 
         res.status(500).json({ message: "Failed to confirm email verification." });
     }
 }));
-router.get("/me", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get("/me", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.status(200).json({ user: sanitizeUser(req.user) });
 }));
-router.patch("/profile", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.patch("/profile", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { displayName, classLevel, subjects, emailPreferences } = req.body;
         const user = req.user;

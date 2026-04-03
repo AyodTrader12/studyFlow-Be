@@ -54,7 +54,7 @@ function protect(req, res, next) {
                 res.status(401).json({ message: "Session expired. Please log in again." });
                 return;
             }
-            res.status(401).json({ message: "Invalid token." });
+            res.status(401).json({ message: error.message });
         }
     });
 }

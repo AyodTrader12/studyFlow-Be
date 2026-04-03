@@ -14,24 +14,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 // src/routes/progress.ts
 const express_1 = require("express");
-const Auth_js_1 = require("../middleware/Auth.js");
-const Progress_js_1 = __importDefault(require("../models/Progress.js"));
-const Resource_js_1 = __importDefault(require("../models/Resource.js"));
-const EmailService_js_1 = require("../services/EmailService.js");
+const Auth_1 = require("../middleware/Auth");
+const Progress_1 = __importDefault(require("../models/Progress"));
+const Resource_1 = __importDefault(require("../models/Resource"));
+const EmailService_1 = require("../services/EmailService");
 const router = (0, express_1.Router)();
 const MILESTONES = [7, 14, 30, 60, 100];
-router.get("/", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get("/", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const progress = yield Progress_js_1.default.find({ userId: req.user._id }).populate({ path: "resourceId", select: "-content" }).sort({ completedAt: -1 });
+        const progress = yield Progress_1.default.find({ userId: req.user._id }).populate({ path: "resourceId", select: "-content" }).sort({ completedAt: -1 });
         res.json({ progress });
     }
     catch (_a) {
         res.status(500).json({ message: "Failed to fetch progress." });
     }
 }));
-router.get("/stats", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get("/stats", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const stats = yield Progress_js_1.default.aggregate([
+        const stats = yield Progress_1.default.aggregate([
             { $match: { userId: req.user._id } },
             { $group: { _id: "$subject", count: { $sum: 1 }, lastViewed: { $max: "$completedAt" } } },
             { $sort: { count: -1 } },
@@ -42,16 +42,16 @@ router.get("/stats", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, 
         res.status(500).json({ message: "Failed to fetch progress stats." });
     }
 }));
-router.post("/:resourceId", Auth_js_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post("/:resourceId", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         const { timeSpent } = req.body;
-        const resource = yield Resource_js_1.default.findById(req.params.resourceId);
+        const resource = yield Resource_1.default.findById(req.params.resourceId);
         if (!resource) {
             res.status(404).json({ message: "Resource not found." });
             return;
         }
-        yield Progress_js_1.default.findOneAndUpdate({ userId: req.user._id, resourceId: req.params.resourceId }, { subject: resource.subject, level: resource.level, completedAt: new Date(), timeSpent: timeSpent !== null && timeSpent !== void 0 ? timeSpent : 0 }, { upsert: true, new: true });
+        yield Progress_1.default.findOneAndUpdate({ userId: req.user._id, resourceId: req.params.resourceId }, { subject: resource.subject, level: resource.level, completedAt: new Date(), timeSpent: timeSpent !== null && timeSpent !== void 0 ? timeSpent : 0 }, { upsert: true, new: true });
         const user = req.user;
         user.totalResourcesViewed += 1;
         const today = new Date().toDateString();
@@ -63,7 +63,7 @@ router.post("/:resourceId", Auth_js_1.protect, (req, res) => __awaiter(void 0, v
                 user.streak.longest = user.streak.current;
             user.streak.lastStudied = new Date();
             if (MILESTONES.includes(user.streak.current) && user.emailPreferences.streakMilestones) {
-                (0, EmailService_js_1.sendStreakMilestoneEmail)({ to: user.email, name: user.displayName, streak: user.streak.current }).catch(console.error);
+                (0, EmailService_1.sendStreakMilestoneEmail)({ to: user.email, name: user.displayName, streak: user.streak.current }).catch(console.error);
             }
         }
         yield user.save();

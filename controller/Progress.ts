@@ -1,10 +1,10 @@
 // src/routes/progress.ts
 import { Router, Response } from "express";
-import { protect } from "../middleware/Auth.js";
-import Progress from "../models/Progress.js";
-import Resource from "../models/Resource.js";
-import { sendStreakMilestoneEmail } from "../services/EmailService.js";
-import type { AuthRequest } from "../types/index.js";
+import { protect } from "../middleware/Auth";
+import Progress from "../models/Progress";
+import Resource from "../models/Resource";
+import { sendStreakMilestoneEmail } from "../services/EmailService";
+import type { AuthRequest } from "../types/index";
 
 const router = Router();
 const MILESTONES = [7, 14, 30, 60, 100];
