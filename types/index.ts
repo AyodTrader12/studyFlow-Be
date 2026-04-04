@@ -1,6 +1,9 @@
 // src/types/index.ts
 // Shared TypeScript interfaces used across the entire backend
 
+// src/types/index.ts
+// Shared TypeScript interfaces used across the entire backend
+
 import { Request } from "express";
 import { Document, Types } from "mongoose";
 
