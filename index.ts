@@ -28,7 +28,12 @@ app.use(cors({
   origin:      process.env.CLIENT_URL ?? "http://localhost:5173",
   credentials: true,
 }));
-
+// Change from 'same-origin' to 'same-origin-allow-popups'
+// app.use(
+//   helmet({
+//     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+//   })
+// );
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
@@ -46,6 +51,7 @@ const summaryLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders:   false,
 });
+
 
 app.use("/api", globalLimiter);
 app.use("/api/summaries", summaryLimiter);

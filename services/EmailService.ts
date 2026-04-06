@@ -61,6 +61,7 @@ export async function sendWelcomeEmail({
   name,
   verificationLink,
 }: WelcomeEmailParams & { verificationLink: string }): Promise<void> {
+  console.log(`📧 Sending welcome email to ${to} (${name})`);
   const features: [string, string][] = [
     ["📖", "Browse resources by subject and class level"],
     ["🎥", "Watch video lessons inside the app — no redirects"],
@@ -108,7 +109,9 @@ export async function sendWelcomeEmail({
     subject: `Welcome to StudyFlow — please verify your email, ${name}`,
     html:    layout(content),
   });
+  console.log(`✅ Welcome email sent successfully to ${to}`);
 }
+
 
 // ── 2. Email verified confirmation ───────────────────────────────────────────
 export async function sendEmailVerifiedConfirmation({

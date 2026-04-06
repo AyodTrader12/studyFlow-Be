@@ -37,6 +37,12 @@ app.use((0, cors_1.default)({
     origin: (_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "http://localhost:5173",
     credentials: true,
 }));
+// Change from 'same-origin' to 'same-origin-allow-popups'
+// app.use(
+//   helmet({
+//     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+//   })
+// );
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 const globalLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 min

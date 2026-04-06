@@ -53,6 +53,7 @@ router.post("/sync", protect, async (req: AuthRequest, res: Response): Promise<v
     if (subjects)   user.subjects   = subjects;
 
     if (!user.emailPreferences.welcomeSent) {
+      console.log(`🔗 Generating verification link for ${user.email}`);
       // Generate a Firebase email verification link via Admin SDK.
       // This produces a secure one-time URL the student clicks to verify.
       // actionCodeSettings is optional — set continueUrl to redirect after verification.
@@ -62,6 +63,7 @@ router.post("/sync", protect, async (req: AuthRequest, res: Response): Promise<v
           url: `${process.env.CLIENT_URL}/verify-success`,
         }
       );
+      console.log(`✅ Verification link generated: ${verificationLink.substring(0, 50)}...`);
 
       await sendWelcomeEmail({
         to:               user.email,
