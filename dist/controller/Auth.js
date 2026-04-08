@@ -77,7 +77,7 @@ router.post("/sync", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, voi
     }
     catch (error) {
         console.error("Auth sync error:", error.message);
-        res.status(500).json({ message: "Failed to sync account." });
+        res.status(500).json({ message: error.message });
     }
 }));
 // ── POST /api/auth/verify-email ───────────────────────────────────────────────

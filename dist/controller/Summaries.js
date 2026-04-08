@@ -17,6 +17,7 @@ const express_1 = require("express");
 const Auth_1 = require("../middleware/Auth");
 const Resource_1 = __importDefault(require("../models/Resource"));
 const Summary_1 = __importDefault(require("../models/Summary"));
+// import { generateResourceSummary } from "../services/GeminiService";
 const GeminiService_1 = require("../services/GeminiService");
 const router = (0, express_1.Router)();
 router.get("/:resourceId", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {

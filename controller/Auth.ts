@@ -83,9 +83,9 @@ router.post("/sync", protect, async (req: AuthRequest, res: Response): Promise<v
         : "Account synced.",
       user: sanitizeUser(user),
     });
-  } catch (error) {
+  } catch (error:any) {
     console.error("Auth sync error:", (error as Error).message);
-    res.status(500).json({ message: "Failed to sync account." });
+    res.status(500).json({ message: error.message});
   }
 });
 

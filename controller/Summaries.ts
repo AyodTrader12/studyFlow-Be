@@ -3,6 +3,7 @@ import { Router, Response } from "express";
 import { protect } from "../middleware/Auth";
 import Resource from "../models/Resource";
 import Summary from "../models/Summary";
+// import { generateResourceSummary } from "../services/GeminiService";
 import { generateResourceSummary } from "../services/GeminiService";
 import type { AuthRequest } from "../types/index";
 
