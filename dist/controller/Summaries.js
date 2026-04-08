@@ -15,8 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // src/routes/summaries.ts
 const express_1 = require("express");
 const Auth_1 = require("../middleware/Auth");
+const Resource_1 = __importDefault(require("../models/Resource"));
 const Summary_1 = __importDefault(require("../models/Summary"));
-// import { generateResourceSummary } from "../services/GeminiService";
+const GeminiService_1 = require("../services/GeminiService");
 const router = (0, express_1.Router)();
 router.get("/:resourceId", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -31,17 +32,21 @@ router.get("/:resourceId", Auth_1.protect, (req, res) => __awaiter(void 0, void 
         res.status(500).json({ message: "Failed to fetch summary." });
     }
 }));
-// router.post("/:resourceId/generate", protect, async (req: AuthRequest, res: Response): Promise<void> => {
-//   try {
-//     const resource = await Resource.findById(req.params.resourceId);
-//     if (!resource) { res.status(404).json({ message: "Resource not found." }); return; }
-//     const summary = await generateResourceSummary({
-//       resourceId: resource._id, title: resource.title, subject: resource.subject,
-//       level: resource.level, type: resource.type, content: resource.content, url: resource.url,
-//     });
-//     res.json({ summary });
-//   } catch (error) {
-//     res.status(500).json({ message: (error as Error).message || "Failed to generate summary." });
-//   }
-// });
+router.post("/:resourceId/generate", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const resource = yield Resource_1.default.findById(req.params.resourceId);
+        if (!resource) {
+            res.status(404).json({ message: "Resource not found." });
+            return;
+        }
+        const summary = yield (0, GeminiService_1.generateResourceSummary)({
+            resourceId: resource._id, title: resource.title, subject: resource.subject,
+            level: resource.level, type: resource.type, content: resource.content, url: resource.url,
+        });
+        res.json({ summary });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message || "Failed to generate summary." });
+    }
+}));
 exports.default = router;
