@@ -19,6 +19,28 @@ const isAdmin_1 = require("../middleware/isAdmin");
 const Resource_1 = __importDefault(require("../models/Resource"));
 const YoutubeService_1 = require("../services/YoutubeService");
 const router = (0, express_1.Router)();
+// GET /api/resources/subject-counts
+// Returns { counts: [{ _id: "Mathematics", count: 12, levels: ["SS1","SS2"] }] }
+router.get("/subject-counts", Auth_1.protect, (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const counts = yield Resource_1.default.aggregate([
+            { $match: { isPublished: true } },
+            {
+                $group: {
+                    _id: "$subject",
+                    count: { $sum: 1 },
+                    levels: { $addToSet: "$level" },
+                    types: { $addToSet: "$type" },
+                },
+            },
+            { $sort: { count: -1 } },
+        ]);
+        res.json({ counts });
+    }
+    catch (_a) {
+        res.status(500).json({ message: "Failed to fetch subject counts." });
+    }
+}));
 router.get("/", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { subject, level, type, search, page = "1", limit = "20" } = req.query;

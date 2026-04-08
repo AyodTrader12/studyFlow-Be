@@ -9,6 +9,28 @@ import { fetchYouTubeMetadata } from "../services/YoutubeService";
 
 const router = Router();
 
+// GET /api/resources/subject-counts
+// Returns { counts: [{ _id: "Mathematics", count: 12, levels: ["SS1","SS2"] }] }
+router.get("/subject-counts", protect, async (_req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const counts = await Resource.aggregate([
+      { $match: { isPublished: true } },
+      {
+        $group: {
+          _id:    "$subject",
+          count:  { $sum: 1 },
+          levels: { $addToSet: "$level" },
+          types:  { $addToSet: "$type" },
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+    res.json({ counts });
+  } catch {
+    res.status(500).json({ message: "Failed to fetch subject counts." });
+  }
+});
+ 
 router.get("/", protect, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { subject, level, type, search, page = "1", limit = "20" } = req.query as ResourceQueryParams;
