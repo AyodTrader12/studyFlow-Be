@@ -20,8 +20,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const Auth_1 = require("../middleware/Auth");
-const isAdmin_js_1 = require("../middleware/isAdmin.js");
-const pastQuestion_1 = __importDefault(require("../models/pastQuestion"));
+const isAdmin_1 = require("../middleware/isAdmin");
+const PastQuestionModel_1 = __importDefault(require("../models/PastQuestionModel"));
 const router = (0, express_1.Router)();
 // ── GET /api/past-questions ───────────────────────────────────────────────────
 router.get("/", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -34,7 +34,7 @@ router.get("/", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, 
             filter.subject = subject;
         if (year && year !== "All")
             filter.year = parseInt(year);
-        const questions = yield pastQuestion_1.default.find(filter)
+        const questions = yield PastQuestionModel_1.default.find(filter)
             .sort({ year: -1 })
             .select("-fileUrl"); // don't expose URL in list — only in single fetch
         res.json({ questions });
@@ -48,7 +48,7 @@ router.get("/", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, 
 // Used by the Past Questions landing page to build the cards.
 router.get("/summary", Auth_1.protect, (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const summary = yield pastQuestion_1.default.aggregate([
+        const summary = yield PastQuestionModel_1.default.aggregate([
             { $match: { isPublished: true } },
             {
                 $group: {
@@ -84,7 +84,7 @@ router.get("/summary", Auth_1.protect, (_req, res) => __awaiter(void 0, void 0, 
 // Used by the Subjects page to show how many past questions exist per subject.
 router.get("/subject-counts", Auth_1.protect, (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const counts = yield pastQuestion_1.default.aggregate([
+        const counts = yield PastQuestionModel_1.default.aggregate([
             { $match: { isPublished: true } },
             { $group: { _id: "$subject", count: { $sum: 1 } } },
         ]);
@@ -97,7 +97,7 @@ router.get("/subject-counts", Auth_1.protect, (_req, res) => __awaiter(void 0, v
 // ── GET /api/past-questions/:id ───────────────────────────────────────────────
 router.get("/:id", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const question = yield pastQuestion_1.default.findById(req.params.id);
+        const question = yield PastQuestionModel_1.default.findById(req.params.id);
         if (!question) {
             res.status(404).json({ message: "Past question not found." });
             return;
@@ -111,9 +111,9 @@ router.get("/:id", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 
     }
 }));
 // ── POST /api/past-questions — admin only ─────────────────────────────────────
-router.post("/", Auth_1.protect, isAdmin_js_1.isAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post("/", Auth_1.protect, isAdmin_1.isAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const question = yield pastQuestion_1.default.create(Object.assign(Object.assign({}, req.body), { addedBy: req.user.firebaseUid }));
+        const question = yield PastQuestionModel_1.default.create(Object.assign(Object.assign({}, req.body), { addedBy: req.user.firebaseUid }));
         res.status(201).json({ message: "Past question added.", question });
     }
     catch (error) {
@@ -121,9 +121,9 @@ router.post("/", Auth_1.protect, isAdmin_js_1.isAdmin, (req, res) => __awaiter(v
     }
 }));
 // ── DELETE /api/past-questions/:id — admin only ───────────────────────────────
-router.delete("/:id", Auth_1.protect, isAdmin_js_1.isAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.delete("/:id", Auth_1.protect, isAdmin_1.isAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield pastQuestion_1.default.findByIdAndDelete(req.params.id);
+        yield PastQuestionModel_1.default.findByIdAndDelete(req.params.id);
         res.json({ message: "Past question deleted." });
     }
     catch (_a) {

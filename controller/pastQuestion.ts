@@ -7,8 +7,8 @@
 
 import { Router, Response } from "express";
 import { protect }  from "../middleware/Auth";
-import { isAdmin }  from "../middleware/isAdmin.js";
-import PastQuestion from "../models/pastQuestion"
+import { isAdmin }  from "../middleware/isAdmin";
+import PastQuestion from "../models/PastQuestionModel"
 import type { AuthRequest } from "../types/index";
 
 const router = Router();
