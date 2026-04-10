@@ -17,7 +17,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const Auth_1 = require("../middleware/Auth");
 const EmailService_1 = require("../services/EmailService");
-const Firebase_1 = require("../utils/Firebase");
 const router = (0, express_1.Router)();
 function sanitizeUser(user) {
     return {
@@ -50,23 +49,35 @@ router.post("/sync", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, voi
             user.classLevel = classLevel;
         if (subjects)
             user.subjects = subjects;
-        if (!user.emailPreferences.welcomeSent) {
-            console.log(`🔗 Generating verification link for ${user.email}`);
-            // Generate a Firebase email verification link via Admin SDK.
-            // This produces a secure one-time URL the student clicks to verify.
-            // actionCodeSettings is optional — set continueUrl to redirect after verification.
-            const verificationLink = yield Firebase_1.auth.generateEmailVerificationLink(user.email, {
-                url: `${process.env.CLIENT_URL}/verify-success`,
-            });
-            console.log(`✅ Verification link generated: ${verificationLink.substring(0, 50)}...`);
-            yield (0, EmailService_1.sendWelcomeEmail)({
-                to: user.email,
-                name: user.displayName,
-                verificationLink, // embedded in the welcome email button
-            });
-            user.emailPreferences.welcomeSent = true;
-            isNewUser = true;
-        }
+        // if (!user.emailPreferences.welcomeSent) {
+        //   console.log(`🔗 Generating verification link for ${user.email}`);
+        //   // Generate a Firebase email verification link via Admin SDK.
+        //   // This produces a secure one-time URL the student clicks to verify.
+        //   // actionCodeSettings is optional — set continueUrl to redirect after verification.
+        //   const clientUrl = (() => {
+        //     const raw = process.env.CLIENT_URL?.trim();
+        //     if (!raw) return "http://localhost:5173";
+        //     try {
+        //       return new URL(raw).toString().replace(/\/$/, "");
+        //     } catch {
+        //       return `http://${raw.replace(/\/$/, "")}`;
+        //     }
+        //   })();
+        //   const verificationLink = await auth.generateEmailVerificationLink(
+        //     user.email,
+        //     {
+        //       url: new URL("/verify-success", clientUrl).toString(),
+        //     }
+        //   );
+        //   console.log(`✅ Verification link generated: ${verificationLink.substring(0, 50)}...`);
+        //   await sendWelcomeEmail({
+        //     to:               user.email,
+        //     name:             user.displayName,
+        //     verificationLink, // embedded in the welcome email button
+        //   });
+        //   user.emailPreferences.welcomeSent = true;
+        //   isNewUser = true;
+        // }
         yield user.save();
         res.status(200).json({
             message: isNewUser
@@ -77,7 +88,7 @@ router.post("/sync", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, voi
     }
     catch (error) {
         console.error("Auth sync error:", error.message);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: "Failed to sync account." });
     }
 }));
 // ── POST /api/auth/verify-email ───────────────────────────────────────────────

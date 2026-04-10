@@ -52,28 +52,38 @@ router.post("/sync", protect, async (req: AuthRequest, res: Response): Promise<v
     if (classLevel) user.classLevel = classLevel;
     if (subjects)   user.subjects   = subjects;
 
-    if (!user.emailPreferences.welcomeSent) {
-      console.log(`🔗 Generating verification link for ${user.email}`);
-      // Generate a Firebase email verification link via Admin SDK.
-      // This produces a secure one-time URL the student clicks to verify.
-      // actionCodeSettings is optional — set continueUrl to redirect after verification.
-      const verificationLink = await auth.generateEmailVerificationLink(
-        user.email,
-        {
-          url: `${process.env.CLIENT_URL}/verify-success`,
-        }
-      );
-      console.log(`✅ Verification link generated: ${verificationLink.substring(0, 50)}...`);
+    // if (!user.emailPreferences.welcomeSent) {
+    //   console.log(`🔗 Generating verification link for ${user.email}`);
+    //   // Generate a Firebase email verification link via Admin SDK.
+    //   // This produces a secure one-time URL the student clicks to verify.
+    //   // actionCodeSettings is optional — set continueUrl to redirect after verification.
+    //   const clientUrl = (() => {
+    //     const raw = process.env.CLIENT_URL?.trim();
+    //     if (!raw) return "http://localhost:5173";
+    //     try {
+    //       return new URL(raw).toString().replace(/\/$/, "");
+    //     } catch {
+    //       return `http://${raw.replace(/\/$/, "")}`;
+    //     }
+    //   })();
 
-      await sendWelcomeEmail({
-        to:               user.email,
-        name:             user.displayName,
-        verificationLink, // embedded in the welcome email button
-      });
+    //   const verificationLink = await auth.generateEmailVerificationLink(
+    //     user.email,
+    //     {
+    //       url: new URL("/verify-success", clientUrl).toString(),
+    //     }
+    //   );
+    //   console.log(`✅ Verification link generated: ${verificationLink.substring(0, 50)}...`);
 
-      user.emailPreferences.welcomeSent = true;
-      isNewUser = true;
-    }
+    //   await sendWelcomeEmail({
+    //     to:               user.email,
+    //     name:             user.displayName,
+    //     verificationLink, // embedded in the welcome email button
+    //   });
+
+    //   user.emailPreferences.welcomeSent = true;
+    //   isNewUser = true;
+    // }
 
     await user.save();
 
@@ -85,7 +95,7 @@ router.post("/sync", protect, async (req: AuthRequest, res: Response): Promise<v
     });
   } catch (error:any) {
     console.error("Auth sync error:", (error as Error).message);
-    res.status(500).json({ message: error.message});
+    res.status(500).json({ message: "Failed to sync account." });
   }
 });
 
