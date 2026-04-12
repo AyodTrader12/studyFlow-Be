@@ -45,12 +45,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const bcrypt_1 = __importDefault(require("bcrypt"));
+const bcrypt = __importStar(require("bcrypt"));
 const UserSchema = new mongoose_1.Schema({
     displayName: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
@@ -82,7 +79,7 @@ const UserSchema = new mongoose_1.Schema({
 // Instance method to compare passwords without exposing the hash
 UserSchema.methods.comparePassword = function (plain) {
     return __awaiter(this, void 0, void 0, function* () {
-        return bcrypt_1.default.compare(plain, this.passwordHash);
+        return bcrypt.compare(plain, this.passwordHash);
     });
 };
 exports.default = mongoose_1.default.model("User", UserSchema);

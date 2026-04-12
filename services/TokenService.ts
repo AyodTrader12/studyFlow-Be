@@ -2,7 +2,7 @@
 // Signs and verifies JWT access tokens.
 // Token is stored in an httpOnly cookie (not localStorage) for security.
 
-import jwt from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
 import type { JwtPayload } from "../types/Auth";
 
 const SECRET      = process.env.JWT_SECRET!;

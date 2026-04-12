@@ -4,7 +4,7 @@
 // and password reset.
 
 import mongoose, { Schema, Document, Types } from "mongoose";
-import bcrypt from "bcrypt";
+import * as bcrypt from "bcrypt";
 // import type { IUserDocument } from "../types";
 
 export interface IUser {

@@ -1,6 +1,7 @@
 import express, { Application,Request, Response, NextFunction } from "express"
 import cors from "cors"
 import dotenv from "dotenv"
+import cookieParser from "cookie-parser"
 import { connectDB } from "./utils/dbConfig"
 import { startReminderCron,startInactivityCron } from "./services/ReminderCron"
 import authRoutes from "./controller/Auth";
@@ -26,6 +27,7 @@ const PORT = parseInt(process.env.PORT ?? "5000", 10);
 
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
+app.use(cookieParser())
 app.use(cors({
   origin:      process.env.CLIENT_URL ?? "http://localhost:5173",
   credentials: true,

@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var _a, _b;
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendVerificationOtp = sendVerificationOtp;
 exports.sendVerifiedConfirmation = sendVerifiedConfirmation;
@@ -22,9 +22,11 @@ exports.sendReminderEmail = sendReminderEmail;
 exports.sendStreakMilestoneEmail = sendStreakMilestoneEmail;
 exports.sendInactivityEmail = sendInactivityEmail;
 const resend_1 = require("resend");
+// Temporary debug — remove after fixing
+console.log("RESEND KEY:", ((_a = process.env.RESEND_API_KEY) === null || _a === void 0 ? void 0 : _a.slice(0, 8)) + "...");
 const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
-const FROM = (_a = process.env.EMAIL_FROM) !== null && _a !== void 0 ? _a : "StudyFlow <noreply@studyflow.com>";
-const CLIENT_URL = (_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "http://localhost:5173";
+const FROM = (_b = process.env.EMAIL_FROM) !== null && _b !== void 0 ? _b : "StudyFlow <noreply@studyflow.com>";
+const CLIENT_URL = (_c = process.env.CLIENT_URL) !== null && _c !== void 0 ? _c : "http://localhost:5173";
 const YEAR = new Date().getFullYear();
 function sendEmail(params) {
     return __awaiter(this, void 0, void 0, function* () {

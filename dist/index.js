@@ -16,6 +16,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const dbConfig_1 = require("./utils/dbConfig");
 const ReminderCron_1 = require("./services/ReminderCron");
 const Auth_1 = __importDefault(require("./controller/Auth"));
@@ -36,6 +37,7 @@ const app = (0, express_1.default)();
 const PORT = parseInt((_a = process.env.PORT) !== null && _a !== void 0 ? _a : "5000", 10);
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use((0, helmet_1.default)());
+app.use((0, cookie_parser_1.default)());
 app.use((0, cors_1.default)({
     origin: (_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "http://localhost:5173",
     credentials: true,
