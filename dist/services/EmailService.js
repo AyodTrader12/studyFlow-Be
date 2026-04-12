@@ -1,8 +1,7 @@
 "use strict";
-// src/services/emailService.ts
-// All email templates sent via Resend.
-// Welcome email now carries the Firebase verification link.
-// Password changed email added.
+// server/src/services/emailService.ts
+// All transactional emails sent via Resend.
+// Auth emails: OTP verification, verified confirmation, password changed, password reset OTP.
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -12,38 +11,60 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var _a;
+var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendWelcomeEmail = sendWelcomeEmail;
-exports.sendEmailVerifiedConfirmation = sendEmailVerifiedConfirmation;
+exports.sendVerificationOtp = sendVerificationOtp;
+exports.sendVerifiedConfirmation = sendVerifiedConfirmation;
+exports.sendPasswordResetOtp = sendPasswordResetOtp;
 exports.sendPasswordChangedEmail = sendPasswordChangedEmail;
+exports.sendWelcomeEmail = sendWelcomeEmail;
 exports.sendReminderEmail = sendReminderEmail;
 exports.sendStreakMilestoneEmail = sendStreakMilestoneEmail;
 exports.sendInactivityEmail = sendInactivityEmail;
-const Resend_1 = require("../utils/Resend");
-const CLIENT_URL = (_a = process.env.CLIENT_URL) !== null && _a !== void 0 ? _a : "http://localhost:5173";
+const resend_1 = require("resend");
+const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
+const FROM = (_a = process.env.EMAIL_FROM) !== null && _a !== void 0 ? _a : "StudyFlow <noreply@studyflow.com>";
+const CLIENT_URL = (_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "http://localhost:5173";
 const YEAR = new Date().getFullYear();
-// ── Shared layout ─────────────────────────────────────────────────────────────
+function sendEmail(params) {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a;
+        const { to, subject, html } = params;
+        console.log(`[EmailService] Sending email to ${to} subject="${subject}"`);
+        try {
+            const result = yield resend.emails.send({
+                from: FROM,
+                to,
+                subject,
+                html,
+            });
+            console.log(`[EmailService] Email sent to ${to} subject="${subject}" id="${(_a = result === null || result === void 0 ? void 0 : result.id) !== null && _a !== void 0 ? _a : "unknown"}"`);
+        }
+        catch (error) {
+            console.error(`[EmailService] Failed to send email to ${to} subject="${subject}"`, error);
+            throw error;
+        }
+    });
+}
+// ── Shared layout wrapper ─────────────────────────────────────────────────────
 function layout(content) {
     return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f0f3fa;font-family:Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f3fa;padding:40px 20px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0"
-  style="background:#ffffff;border-radius:16px;overflow:hidden;max-width:600px;width:100%;">
+  style="background:#fff;border-radius:16px;overflow:hidden;max-width:600px;width:100%;">
   <tr>
     <td style="background:#1a2a5e;padding:28px 40px;text-align:center;">
-      <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;">📚 StudyFlow</h1>
+      <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;">StudyFlow</h1>
       <p style="margin:6px 0 0;color:#93aad4;font-size:12px;">Learn Smarter. Study Better.</p>
     </td>
   </tr>
   <tr><td style="padding:36px 40px 28px;">${content}</td></tr>
   <tr>
     <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-      <p style="margin:0;color:#9ca3af;font-size:12px;">
-        © ${YEAR} StudyFlow. All rights reserved.
-      </p>
+      <p style="margin:0;color:#9ca3af;font-size:12px;">© ${YEAR} StudyFlow. All rights reserved.</p>
     </td>
   </tr>
 </table>
@@ -61,117 +82,181 @@ function btn(href, label, color = "#1a2a5e") {
     </a>
   </div>`;
 }
-// ── 1. Welcome + verification email ──────────────────────────────────────────
-// verificationLink comes from Firebase Admin: auth.generateEmailVerificationLink()
-function sendWelcomeEmail(_a) {
-    return __awaiter(this, arguments, void 0, function* ({ to, name, verificationLink, }) {
-        console.log(`📧 Sending welcome email to ${to} (${name})`);
-        const features = [
-            ["📖", "Browse resources by subject and class level"],
-            ["🎥", "Watch video lessons inside the app — no redirects"],
-            ["📝", "Read detailed study notes with worked examples"],
-            ["🔖", "Bookmark resources to revisit later"],
-            ["🗓️", "Set study reminders with email notifications"],
-            ["🤖", "Get AI summaries of any resource after viewing"],
-        ];
+// ── OTP code block HTML ───────────────────────────────────────────────────────
+function otpBlock(code) {
+    const digits = code.split("");
+    const boxes = digits.map((d) => `<td style="padding:0 4px;">
+         <div style="width:44px;height:56px;border:2px solid #1a2a5e;border-radius:12px;
+                     display:inline-flex;align-items:center;justify-content:center;
+                     font-size:28px;font-weight:800;color:#1a2a5e;background:#f0f3fa;">
+           ${d}
+         </div>
+       </td>`).join("");
+    return `
+    <table cellpadding="0" cellspacing="0" style="margin:24px auto;">
+      <tr>${boxes}</tr>
+    </table>`;
+}
+// ── 1. Email verification OTP ─────────────────────────────────────────────────
+function sendVerificationOtp(params) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { to, name, otp } = params;
         const content = `
-    <h2 style="margin:0 0 16px;color:#1a2a5e;font-size:22px;font-weight:700;">
-      Welcome to StudyFlow, ${name}! 🎉
+    <h2 style="margin:0 0 8px;color:#1a2a5e;font-size:20px;font-weight:700;">
+      Welcome to StudyFlow, ${name}!
     </h2>
-    <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.7;">
-      Your account has been created. Before you start studying, please verify your
-      email address by clicking the button below.
+    <p style="margin:0 0 4px;color:#4b5563;font-size:14px;line-height:1.7;">
+      Your account has been created. Enter the 6-digit code below to verify your email address.
     </p>
-
-    ${btn(verificationLink, "Verify My Email Address")}
-
-    <p style="margin:16px 0;color:#6b7280;font-size:12px;text-align:center;">
-      This verification link expires in <strong>24 hours</strong>.
-      If you did not create this account, you can safely ignore this email.
-    </p>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
-
-    <p style="margin:0 0 16px;color:#4b5563;font-size:14px;font-weight:600;">
-      Once verified, here's what you can do:
-    </p>
-    <table width="100%" cellpadding="0" cellspacing="0">
-      ${features.map(([emoji, text]) => `
-      <tr><td style="padding:7px 0;">
-        <table cellpadding="0" cellspacing="0"><tr>
-          <td style="width:28px;font-size:17px;">${emoji}</td>
-          <td style="color:#374151;font-size:14px;line-height:1.5;">${text}</td>
-        </tr></table>
-      </td></tr>`).join("")}
-    </table>
-  `;
-        yield Resend_1.resend.emails.send({
-            from: Resend_1.FROM,
+    ${otpBlock(otp)}
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px 20px;margin:16px 0;">
+      <p style="margin:0;color:#92400e;font-size:13px;">
+        This code expires in <strong>10 minutes</strong>.
+        Do not share it with anyone.
+      </p>
+    </div>
+    <p style="margin:16px 0 0;color:#6b7280;font-size:13px;line-height:1.7;">
+      If you did not create a StudyFlow account, you can safely ignore this email.
+    </p>`;
+        yield sendEmail({
             to,
-            subject: `Welcome to StudyFlow — please verify your email, ${name}`,
+            subject: `${otp} is your StudyFlow verification code`,
             html: layout(content),
         });
-        console.log(`✅ Welcome email sent successfully to ${to}`);
     });
 }
-// ── 2. Email verified confirmation ───────────────────────────────────────────
-function sendEmailVerifiedConfirmation(_a) {
-    return __awaiter(this, arguments, void 0, function* ({ to, name, }) {
+// ── 2. Verified confirmation email ───────────────────────────────────────────
+function sendVerifiedConfirmation(params) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { to, name } = params;
         const content = `
     <div style="text-align:center;margin-bottom:24px;">
       <div style="width:64px;height:64px;border-radius:50%;background:#dcfce7;
-                  margin:0 auto 16px;display:flex;align-items:center;
-                  justify-content:center;font-size:32px;">✅</div>
+                  margin:0 auto 16px;display:flex;align-items:center;justify-content:center;
+                  font-size:32px;">✅</div>
       <h2 style="margin:0;color:#1a2a5e;font-size:22px;">Email Verified!</h2>
     </div>
     <p style="color:#4b5563;font-size:15px;line-height:1.7;text-align:center;">
-      Hi ${name}, your email address has been successfully verified.
-      Your StudyFlow account is now fully active.
+      Hi ${name}, your email has been verified and your StudyFlow account is fully active.
     </p>
-    ${btn(`${CLIENT_URL}/dashboard`, "Start Studying →", "#16a34a")}
-  `;
-        yield Resend_1.resend.emails.send({
-            from: Resend_1.FROM,
+    <div style="text-align:center;margin:28px 0 8px;">
+      <a href="${CLIENT_URL}/login"
+         style="display:inline-block;background:#1a2a5e;color:#fff;text-decoration:none;
+                padding:13px 34px;border-radius:10px;font-size:15px;font-weight:700;">
+        Log In to StudyFlow
+      </a>
+    </div>`;
+        yield sendEmail({
             to,
-            subject: "Your StudyFlow email has been verified ✅",
+            subject: "Your StudyFlow email has been verified",
             html: layout(content),
         });
     });
 }
-// ── 3. Password changed notification ─────────────────────────────────────────
-function sendPasswordChangedEmail(_a) {
-    return __awaiter(this, arguments, void 0, function* ({ to, name, }) {
+// ── 3. Password reset OTP ─────────────────────────────────────────────────────
+function sendPasswordResetOtp(params) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { to, name, otp } = params;
+        const content = `
+    <h2 style="margin:0 0 8px;color:#1a2a5e;font-size:20px;font-weight:700;">
+      Reset your password
+    </h2>
+    <p style="margin:0 0 4px;color:#4b5563;font-size:14px;line-height:1.7;">
+      Hi ${name}, we received a request to reset your StudyFlow password.
+      Enter the code below on the reset page.
+    </p>
+    ${otpBlock(otp)}
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px 20px;margin:16px 0;">
+      <p style="margin:0;color:#92400e;font-size:13px;">
+        This code expires in <strong>10 minutes</strong>.
+        If you did not request a password reset, ignore this email — your password will not change.
+      </p>
+    </div>`;
+        yield sendEmail({
+            to,
+            subject: `${otp} — your StudyFlow password reset code`,
+            html: layout(content),
+        });
+    });
+}
+// ── 4. Password changed notification ─────────────────────────────────────────
+function sendPasswordChangedEmail(params) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { to, name } = params;
         const content = `
     <div style="text-align:center;margin-bottom:24px;">
       <div style="width:64px;height:64px;border-radius:50%;background:#dbeafe;
-                  margin:0 auto 16px;display:flex;align-items:center;
-                  justify-content:center;font-size:32px;">🔐</div>
-      <h2 style="margin:0;color:#1a2a5e;font-size:20px;">Password Changed Successfully</h2>
+                  margin:0 auto 16px;display:flex;align-items:center;justify-content:center;
+                  font-size:32px;">🔐</div>
+      <h2 style="margin:0;color:#1a2a5e;font-size:20px;">Password Changed</h2>
     </div>
-    <p style="color:#4b5563;font-size:14px;line-height:1.7;">
-      Hi ${name}, your StudyFlow password was changed on
+    <p style="color:#4b5563;font-size:14px;line-height:1.7;text-align:center;">
+      Hi ${name}, your StudyFlow password was successfully changed on
       <strong>${new Date().toLocaleDateString("en-NG", {
             weekday: "long", year: "numeric", month: "long", day: "numeric",
         })}</strong>.
     </p>
-    <p style="color:#4b5563;font-size:14px;line-height:1.7;">
-      If you made this change, no further action is needed.
-    </p>
-
     <div style="background:#fef9c3;border:1px solid #fde047;border-radius:12px;padding:16px;margin:20px 0;">
       <p style="margin:0;color:#854d0e;font-size:13px;line-height:1.6;">
-        ⚠️ <strong>Didn't change your password?</strong> Your account may have been compromised.
-        Please <a href="${CLIENT_URL}/forgot-password" style="color:#1a2a5e;font-weight:700;">reset your password immediately</a>
-        and contact us.
+        Didn't change your password? 
+        <a href="${CLIENT_URL}/forgot-password" style="color:#1a2a5e;font-weight:700;">
+          Reset it immediately
+        </a>
+        and contact support.
       </p>
     </div>
-
-    ${btn(`${CLIENT_URL}/dashboard`, "Go to Dashboard")}
-  `;
-        yield Resend_1.resend.emails.send({
-            from: Resend_1.FROM,
+    <div style="text-align:center;">
+      <a href="${CLIENT_URL}/login"
+         style="display:inline-block;background:#1a2a5e;color:#fff;text-decoration:none;
+                padding:13px 34px;border-radius:10px;font-size:15px;font-weight:700;">
+        Go to Login
+      </a>
+    </div>`;
+        yield sendEmail({
             to,
             subject: "Your StudyFlow password has been changed",
+            html: layout(content),
+        });
+    });
+}
+// ── 5. Welcome email (sent alongside verification, or after Google signup) ────
+function sendWelcomeEmail(params) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { to, name } = params;
+        const features = [
+            ["Browse", "resources by subject and class level"],
+            ["Watch", "video lessons inside the app"],
+            ["Read", "detailed study notes and examples"],
+            ["Save", "bookmarks to revisit later"],
+            ["Set", "study reminders with email alerts"],
+            ["Get", "AI summaries after viewing any resource"],
+        ];
+        const content = `
+    <h2 style="margin:0 0 16px;color:#1a2a5e;font-size:22px;font-weight:700;">
+      Welcome aboard, ${name}!
+    </h2>
+    <p style="margin:0 0 20px;color:#4b5563;font-size:14px;line-height:1.7;">
+      Your account is now active. Here is what you can do on StudyFlow:
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      ${features.map(([verb, rest]) => `
+        <tr><td style="padding:6px 0;">
+          <table cellpadding="0" cellspacing="0"><tr>
+            <td style="width:24px;color:#1a2a5e;font-weight:700;font-size:13px;">${verb}</td>
+            <td style="color:#374151;font-size:13px;padding-left:8px;">${rest}</td>
+          </tr></table>
+        </td></tr>`).join("")}
+    </table>
+    <div style="text-align:center;margin:28px 0 8px;">
+      <a href="${CLIENT_URL}/login"
+         style="display:inline-block;background:#1a2a5e;color:#fff;text-decoration:none;
+                padding:13px 34px;border-radius:10px;font-size:15px;font-weight:700;">
+        Start Studying
+      </a>
+    </div>`;
+        yield sendEmail({
+            to,
+            subject: `Welcome to StudyFlow, ${name}!`,
             html: layout(content),
         });
     });
@@ -188,14 +273,13 @@ function sendReminderEmail(_a) {
     </div>
     ${btn(`${CLIENT_URL}/dashboard`, "Open Dashboard →")}
   `;
-        yield Resend_1.resend.emails.send({
-            from: Resend_1.FROM, to,
+        yield sendEmail({
+            to,
             subject: `⏰ Study Reminder: ${reminderText}`,
             html: layout(content),
         });
     });
 }
-// ── 5. Streak milestone email ─────────────────────────────────────────────────
 function sendStreakMilestoneEmail(_a) {
     return __awaiter(this, arguments, void 0, function* ({ to, name, streak, }) {
         var _b;
@@ -225,14 +309,13 @@ function sendStreakMilestoneEmail(_a) {
       ${btn(`${CLIENT_URL}/dashboard`, "Keep It Going →")}
     </div>
   `;
-        yield Resend_1.resend.emails.send({
-            from: Resend_1.FROM, to,
+        yield sendEmail({
+            to,
             subject: `${emoji} You've hit a ${streak}-day study streak on StudyFlow!`,
             html: layout(content),
         });
     });
 }
-// ── 6. Inactivity nudge ───────────────────────────────────────────────────────
 function sendInactivityEmail(_a) {
     return __awaiter(this, arguments, void 0, function* ({ to, name, daysSinceLastStudy, }) {
         const content = `
@@ -251,8 +334,8 @@ function sendInactivityEmail(_a) {
       </a>
     </p>
   `;
-        yield Resend_1.resend.emails.send({
-            from: Resend_1.FROM, to,
+        yield sendEmail({
+            to,
             subject: `We miss you, ${name}! Come back to StudyFlow 📚`,
             html: layout(content),
         });

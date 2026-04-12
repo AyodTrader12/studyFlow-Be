@@ -1,56 +1,48 @@
-// src/middleware/auth.ts
+// server/src/middleware/auth.ts
+// Reads the JWT from the httpOnly cookie "sf_token".
+// Verifies it, finds the user in MongoDB, attaches to req.user.
+// No Firebase — everything is in our own DB.
+
 import { Response, NextFunction } from "express";
-import { auth } from "../utils/Firebase";
-import User from "../models/user";
-import type { AuthRequest } from "../types/index";
+import { verifyToken }  from "../services/TokenService";
+import User             from "../models/user";
+import type { AuthRequest } from "../types/Auth";
 
 export async function protect(
-  req: AuthRequest,
-  res: Response,
+  req:  AuthRequest,
+  res:  Response,
   next: NextFunction
 ): Promise<void> {
-  const authHeader = req.headers.authorization;
+  // Read token from cookie (primary) or Authorization header (fallback for API testing)
+  const cookieToken = req.cookies?.sf_token as string | undefined;
+  const headerToken = req.headers.authorization?.startsWith("Bearer ")
+    ? req.headers.authorization.split(" ")[1]
+    : undefined;
 
-  if (!authHeader?.startsWith("Bearer ")) {
-    res.status(401).json({ message: "No token provided. Please log in." });
+  const token = cookieToken || headerToken;
+
+  if (!token) {
+    res.status(401).json({ message: "Not authenticated. Please log in." });
     return;
   }
 
-  const token = authHeader.split(" ")[1];
-
   try {
-    const decoded = await auth.verifyIdToken(token);
+    const payload = verifyToken(token);
 
-    let user = await User.findOne({ firebaseUid: decoded.uid });
-
+    const user = await User.findById(payload.userId);
     if (!user) {
-      user = await User.create({
-        firebaseUid:  decoded.uid,
-        email:        decoded.email ?? "",
-        displayName:  decoded.name ?? (decoded.email?.split("@")[0] ?? "Student"),
-        photoURL:     decoded.picture ?? "",
-        isVerified:   decoded.email_verified ?? false,
-      });
-    }
-
-    req.firebaseUser = {
-      uid:            decoded.uid,
-      email:          decoded.email ?? "",
-      name:           decoded.name,
-      picture:        decoded.picture,
-      email_verified: decoded.email_verified,
-      iat:            decoded.iat,
-      exp:            decoded.exp,
-    };
-    req.user = user;
-
-    next();
-  } catch (error:any) {
-    const err = error as { code?: string };
-    if (err.code === "auth/id-token-expired") {
-      res.status(401).json({ message: "Session expired. Please log in again." });
+      res.status(401).json({ message: "Account not found. Please log in again." });
       return;
     }
-    res.status(401).json({ message: error.message });
+
+    req.user = user;
+    next();
+  } catch (error) {
+    const err = error as { name?: string };
+    if (err.name === "TokenExpiredError") {
+      res.status(401).json({ message: "Session expired. Please log in again." });
+    } else {
+      res.status(401).json({ message: "Invalid session. Please log in again." });
+    }
   }
 }
