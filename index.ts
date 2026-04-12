@@ -13,6 +13,7 @@ import summaryRoutes from "./controller/Summaries";
 import AdminRoutes from "./controller/Admin";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import AnalyticsRoutes from "./controller/Analytics"
 // import PastQuestionRoutes from "./controller/pastQuestion"
 import aiRoutes from "./controller/ai";
 dotenv.config()
@@ -84,6 +85,7 @@ app.use("/api/summaries", summaryRoutes);
 app.use("/api/admin",AdminRoutes);
 // app.use("/api/past-questions",PastQuestionRoutes);
 app.use("/api/ai",             aiRoutes);
+app.use("api/analytics",AnalyticsRoutes)
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: `Route ${req.method} ${req.path} not found.` });
