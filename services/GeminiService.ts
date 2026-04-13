@@ -14,7 +14,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 // Use gemini-2.0-flash — the current stable fast model as of 2025
 // If this also fails, change to "gemini-1.5-flash-latest" or "gemini-2.0-flash-lite"
-const MODEL_NAME = "gemini-2.0-flash";
+// gemini-1.5-flash works on the free tier (15 requests/min, 1500/day)
+const MODEL_NAME = "gemini-1.5-flash";
 
 export async function generateResourceSummary(
   params: GenerateSummaryParams
@@ -36,36 +37,61 @@ export async function generateResourceSummary(
 
   const prompt = buildPrompt({ title, subject, level, type, content });
 
-  try {
-    const result   = await model.generateContent(prompt);
-    const text     = result.response.text();
-    const clean    = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const parsed   = JSON.parse(clean) as GeminiSummaryResponse;
+  // Retry up to 2 times on 429 quota errors
+  const MAX_RETRIES = 2;
 
-    const summary = await Summary.create({
-      resourceId,
-      summary:       parsed.summary       ?? "",
-      keyPoints:     parsed.keyPoints      ?? [],
-      examQuestions: parsed.examQuestions  ?? [],
-    });
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result   = await model.generateContent(prompt);
+      const text     = result.response.text();
+      const clean    = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const parsed   = JSON.parse(clean) as GeminiSummaryResponse;
 
-    return summary;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+      const summary = await Summary.create({
+        resourceId,
+        summary:       parsed.summary       ?? "",
+        keyPoints:     parsed.keyPoints      ?? [],
+        examQuestions: parsed.examQuestions  ?? [],
+      });
 
-    // Give a helpful error message based on the error type
-    if (message.includes("404") || message.includes("not found")) {
-      throw new Error(
-        `Gemini model "${MODEL_NAME}" not found. ` +
-        `Try changing MODEL_NAME to "gemini-1.5-flash-latest" in geminiService.ts`
-      );
+      return summary;
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+
+      // 429 — quota exceeded, wait and retry
+      if (message.includes("429") || message.includes("quota")) {
+        if (attempt < MAX_RETRIES) {
+          // Extract retry delay from error or default to 5 seconds
+          const retryMatch = message.match(/retry.*?(\d+)s/i);
+          const waitSecs   = retryMatch ? Math.min(parseInt(retryMatch[1]), 10) : 5;
+          console.log(`Gemini quota hit. Waiting ${waitSecs}s before retry ${attempt + 1}/${MAX_RETRIES}...`);
+          await new Promise((r) => setTimeout(r, waitSecs * 1000));
+          continue; // retry
+        }
+        throw new Error(
+          "Gemini AI is temporarily unavailable due to rate limits. " +
+          "Please try again in a minute. " +
+          "The free tier allows 15 requests per minute and 1,500 per day."
+        );
+      }
+
+      if (message.includes("404") || message.includes("not found")) {
+        throw new Error(
+          `Gemini model "${MODEL_NAME}" not found. ` +
+          `Check your GEMINI_API_KEY is for Google AI Studio (not Vertex AI).`
+        );
+      }
+
+      if (message.includes("403") || message.includes("API_KEY")) {
+        throw new Error("Invalid Gemini API key. Check GEMINI_API_KEY in your .env file.");
+      }
+
+      throw new Error(`Failed to generate summary: ${message}`);
     }
-    if (message.includes("API_KEY") || message.includes("403")) {
-      throw new Error("Invalid Gemini API key. Check your GEMINI_API_KEY in .env");
-    }
-
-    throw new Error(`Failed to generate summary: ${message}`);
   }
+
+  throw new Error("Failed to generate summary after retries.");
 }
 
 function buildPrompt({

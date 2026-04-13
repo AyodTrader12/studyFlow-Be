@@ -11,7 +11,7 @@ import type {
   InactivityEmailParams,
 } from "../types/index";
 // Temporary debug — remove after fixing
-console.log("RESEND KEY:", process.env.RESEND_API_KEY?.slice(0, 8) + "...");
+// console.log("RESEND KEY:", process.env.RESEND_API_KEY?.slice(0, 8) + "...");
 const resend     = new Resend(process.env.RESEND_API_KEY!);
 const FROM       = process.env.EMAIL_FROM  ?? "StudyFlow <noreply@studyflow.com>";
 const CLIENT_URL = process.env.CLIENT_URL  ?? "http://localhost:5173";

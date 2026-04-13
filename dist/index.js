@@ -89,7 +89,7 @@ app.use("/api/summaries", Summaries_1.default);
 app.use("/api/admin", Admin_1.default);
 // app.use("/api/past-questions",PastQuestionRoutes);
 app.use("/api/ai", ai_1.default);
-app.use("api/analytics", Analytics_1.default);
+app.use("/api/admin/analytics", Analytics_1.default);
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
     res.status(404).json({ message: `Route ${req.method} ${req.path} not found.` });

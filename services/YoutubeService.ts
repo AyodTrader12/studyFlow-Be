@@ -44,17 +44,29 @@ export async function fetchYouTubeMetadata(url: string): Promise<YouTubeMetadata
     `&id=${videoId}` +
     `&key=${apiKey}`;
 
+  console.log(`[YouTubeService] Full API URL: ${apiUrl}`);
+
   let res: Response;
   try {
-    res = await fetch(apiUrl);
-  } catch {
-    throw new Error("Could not reach YouTube API. Check your internet connection.");
+    console.log(`[YouTubeService] Making fetch request...`);
+    res = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'StudyFlow-API/1.0'
+      }
+    });
+    console.log(`[YouTubeService] Fetch completed with status: ${res.status}`);
+  } catch (error) {
+    console.error(`[YouTubeService] Fetch failed with error:`, error);
+    throw new Error(`Could not reach YouTube API: ${error}`);
   }
 
   const data = (await res.json()) as YouTubeApiResponse;
+  console.log(`[YouTubeService] API response data:`, JSON.stringify(data, null, 2));
 
   // API returned an error object
   if (data.error) {
+    console.error(`[YouTubeService] API error:`, data.error);
     if (data.error.code === 400) {
       throw new Error("Invalid YouTube API key. Check YOUTUBE_API_KEY in your .env file.");
     }
