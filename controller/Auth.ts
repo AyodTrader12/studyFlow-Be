@@ -116,6 +116,8 @@ router.post("/signup", async (req: Request, res: Response): Promise<void> => {
 
     // Send verification OTP email
     await sendVerificationOtp({ to: user.email, name: user.displayName, otp: plain });
+ console.log(`Auth `);
+ 
 
     res.status(201).json({
       message: "Account created. Check your email for the 6-digit verification code.",
