@@ -120,7 +120,6 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
         });
         // Send verification OTP email
         yield (0, EmailService_1.sendVerificationOtp)({ to: user.email, name: user.displayName, otp: plain });
-        console.log(`Auth `);
         res.status(201).json({
             message: "Account created. Check your email for the 6-digit verification code.",
             email: user.email,
