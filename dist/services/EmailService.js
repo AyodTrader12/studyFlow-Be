@@ -25,8 +25,8 @@ const resend_1 = require("resend");
 // Temporary debug — remove after fixing
 // console.log("RESEND KEY:", process.env.RESEND_API_KEY?.slice(0, 8) + "...");
 const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
-const FROM = (_a = process.env.EMAIL_FROM) !== null && _a !== void 0 ? _a : "StudyFlow <noreply@studyflow.com>";
-const CLIENT_URL = (_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "http://localhost:5173";
+const FROM = (_a = process.env.EMAIL_FROM) !== null && _a !== void 0 ? _a : "StudyFlow <noreply@study-flow-fe.vercel.app>";
+const CLIENT_URL = (_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "https://study-flow-fe.vercel.app";
 const YEAR = new Date().getFullYear();
 function sendEmail(params) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -142,7 +142,7 @@ function sendVerifiedConfirmation(params) {
       Hi ${name}, your email has been verified and your StudyFlow account is fully active.
     </p>
     <div style="text-align:center;margin:28px 0 8px;">
-      <a href="${CLIENT_URL}/login"
+      <a href="${CLIENT_URL}/auth/login"
          style="display:inline-block;background:#1a2a5e;color:#fff;text-decoration:none;
                 padding:13px 34px;border-radius:10px;font-size:15px;font-weight:700;">
         Log In to StudyFlow
@@ -201,7 +201,7 @@ function sendPasswordChangedEmail(params) {
     <div style="background:#fef9c3;border:1px solid #fde047;border-radius:12px;padding:16px;margin:20px 0;">
       <p style="margin:0;color:#854d0e;font-size:13px;line-height:1.6;">
         Didn't change your password? 
-        <a href="${CLIENT_URL}/forgot-password" style="color:#1a2a5e;font-weight:700;">
+        <a href="${CLIENT_URL}/auth/forgot-password" style="color:#1a2a5e;font-weight:700;">
           Reset it immediately
         </a>
         and contact support.
@@ -250,7 +250,7 @@ function sendWelcomeEmail(params) {
         </td></tr>`).join("")}
     </table>
     <div style="text-align:center;margin:28px 0 8px;">
-      <a href="${CLIENT_URL}/login"
+      <a href="${CLIENT_URL}/auth/login"
          style="display:inline-block;background:#1a2a5e;color:#fff;text-decoration:none;
                 padding:13px 34px;border-radius:10px;font-size:15px;font-weight:700;">
         Start Studying
