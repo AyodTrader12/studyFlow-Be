@@ -30,7 +30,7 @@ const PORT = parseInt(process.env.PORT ?? "5000", 10);
 app.use(helmet());
 app.use(cookieParser())
 app.use(cors({
-  origin:      process.env.CLIENT_URL ?? "http://localhost:5173",
+  origin:      process.env.CLIENT_URL ,
   credentials: true,
 }));
 // Change from 'same-origin' to 'same-origin-allow-popups'
@@ -104,7 +104,7 @@ async function bootstrap(): Promise<void> {
   app.listen(PORT, () => {
     console.log(`\n🚀 StudyFlow API running on http://localhost:${PORT}`);
     console.log(`📚 Environment : ${process.env.NODE_ENV ?? "development"}`);
-    console.log(`🔗 Client URL  : ${process.env.CLIENT_URL ?? "http://localhost:5173"}\n`);
+    console.log(`🔗 Client URL  : ${process.env.CLIENT_URL ?? "https://study-flow-fe.vercel.app/"}\n`);
   });
 
   startReminderCron();

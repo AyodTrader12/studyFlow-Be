@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b;
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -40,7 +40,7 @@ const PORT = parseInt((_a = process.env.PORT) !== null && _a !== void 0 ? _a : "
 app.use((0, helmet_1.default)());
 app.use((0, cookie_parser_1.default)());
 app.use((0, cors_1.default)({
-    origin: (_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "http://localhost:5173",
+    origin: process.env.CLIENT_URL,
     credentials: true,
 }));
 // Change from 'same-origin' to 'same-origin-allow-popups'
@@ -107,7 +107,7 @@ function bootstrap() {
             var _a, _b;
             console.log(`\n🚀 StudyFlow API running on http://localhost:${PORT}`);
             console.log(`📚 Environment : ${(_a = process.env.NODE_ENV) !== null && _a !== void 0 ? _a : "development"}`);
-            console.log(`🔗 Client URL  : ${(_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "http://localhost:5173"}\n`);
+            console.log(`🔗 Client URL  : ${(_b = process.env.CLIENT_URL) !== null && _b !== void 0 ? _b : "https://study-flow-fe.vercel.app/"}\n`);
         });
         (0, ReminderCron_1.startReminderCron)();
         (0, ReminderCron_1.startInactivityCron)();
