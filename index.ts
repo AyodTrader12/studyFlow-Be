@@ -30,7 +30,7 @@ const PORT = parseInt(process.env.PORT ?? "5000", 10);
 app.use(helmet());
 app.use(cookieParser())
 app.use(cors({
-  origin:      process.env.CLIENT_URL ,
+  origin:      "https://study-flow-fe.vercel.app",
   credentials: true,
 }));
 // Change from 'same-origin' to 'same-origin-allow-popups'
