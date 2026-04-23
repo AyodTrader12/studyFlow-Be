@@ -37,8 +37,9 @@ export function startReminderCron(): void {
         await sendReminderEmail({
           to:           user.email,
           name:         user.displayName,
-          reminderText: reminder.text,
+          text:         reminder.text,
           date:         reminder.date,
+          time:         reminder.time,
         });
 
         reminder.emailSent = true;

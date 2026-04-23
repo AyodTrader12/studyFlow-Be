@@ -45,8 +45,9 @@ function startReminderCron() {
                 yield (0, EmailService_1.sendReminderEmail)({
                     to: user.email,
                     name: user.displayName,
-                    reminderText: reminder.text,
+                    text: reminder.text,
                     date: reminder.date,
+                    time: reminder.time,
                 });
                 reminder.emailSent = true;
                 reminder.sentAt = new Date();
