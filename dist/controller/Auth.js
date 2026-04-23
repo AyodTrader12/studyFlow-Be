@@ -52,10 +52,10 @@ function sanitize(user) {
 // ── Helper: set the JWT as an httpOnly cookie ─────────────────────────────────
 function setTokenCookie(res, token) {
     res.cookie("sf_token", token, {
-        httpOnly: true, // JS cannot read it
-        secure: process.env.NODE_ENV === "production", // HTTPS only in prod
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+        httpOnly: true,
+        secure: true, // MUST be true if sameSite is "none"
+        sameSite: "none", // Allows cross-site cookie usage
+        maxAge: 7 * 24 * 60 * 60 * 1000,
         path: "/",
     });
 }
