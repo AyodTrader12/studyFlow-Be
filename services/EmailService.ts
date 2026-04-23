@@ -19,7 +19,7 @@
 import nodemailer from "nodemailer";
 import type Mail   from "nodemailer/lib/mailer";
 
-const CLIENT_URL = process.env.CLIENT_URL  ?? "http://localhost:5173";
+const CLIENT_URL = process.env.CLIENT_URL ;
 const YEAR       = new Date().getFullYear();
 
 // ── Create the transporter once at module load ────────────────────────────────
@@ -259,7 +259,7 @@ export async function sendPasswordChangedEmail(params: {
     <div style="background:#fef9c3;border:1px solid #fde047;border-radius:12px;padding:16px;margin:20px 0;">
       <p style="margin:0;color:#854d0e;font-size:13px;line-height:1.6;">
         Didn't change your password?
-        <a href="${CLIENT_URL}/auth/forgot-password" style="color:#1a2a5e;font-weight:700;">
+        <a href="${CLIENT_URL}/auth/reset-password" style="color:#1a2a5e;font-weight:700;">
           Reset it immediately
         </a>
         and contact support.

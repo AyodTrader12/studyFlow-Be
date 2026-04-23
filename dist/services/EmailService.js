@@ -28,7 +28,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b;
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendVerificationOtp = sendVerificationOtp;
 exports.sendVerifiedConfirmation = sendVerifiedConfirmation;
@@ -39,7 +39,7 @@ exports.sendReminderEmail = sendReminderEmail;
 exports.sendInactivityEmail = sendInactivityEmail;
 exports.sendStreakMilestoneEmail = sendStreakMilestoneEmail;
 const nodemailer_1 = __importDefault(require("nodemailer"));
-const CLIENT_URL = (_a = process.env.CLIENT_URL) !== null && _a !== void 0 ? _a : "http://localhost:5173";
+const CLIENT_URL = process.env.CLIENT_URL;
 const YEAR = new Date().getFullYear();
 // ── Create the transporter once at module load ────────────────────────────────
 // The transporter is reused for every email — no need to recreate it.
@@ -53,7 +53,7 @@ if (process.env.NODE_ENV === "production") {
     // See Section 3 of the explanation below for provider-specific settings.
     transporter = nodemailer_1.default.createTransport({
         host: process.env.SMTP_HOST, // e.g. "smtp.gmail.com"
-        port: parseInt((_b = process.env.SMTP_PORT) !== null && _b !== void 0 ? _b : "587"),
+        port: parseInt((_a = process.env.SMTP_PORT) !== null && _a !== void 0 ? _a : "587"),
         secure: process.env.SMTP_PORT === "465", // true for port 465 (SSL), false for 587 (TLS)
         auth: {
             user: process.env.SMTP_USER, // your email address
@@ -246,7 +246,7 @@ function sendPasswordChangedEmail(params) {
     <div style="background:#fef9c3;border:1px solid #fde047;border-radius:12px;padding:16px;margin:20px 0;">
       <p style="margin:0;color:#854d0e;font-size:13px;line-height:1.6;">
         Didn't change your password?
-        <a href="${CLIENT_URL}/auth/forgot-password" style="color:#1a2a5e;font-weight:700;">
+        <a href="${CLIENT_URL}/auth/reset-password" style="color:#1a2a5e;font-weight:700;">
           Reset it immediately
         </a>
         and contact support.
