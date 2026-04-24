@@ -17,7 +17,7 @@ const express_1 = require("express");
 const Auth_1 = require("../middleware/Auth");
 const Resource_1 = __importDefault(require("../models/Resource"));
 const Summary_1 = __importDefault(require("../models/Summary"));
-const GeminiService_1 = require("../services/GeminiService");
+const geminiService_1 = require("../services/geminiService");
 const router = (0, express_1.Router)();
 router.get("/:resourceId", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -39,7 +39,7 @@ router.post("/:resourceId/generate", Auth_1.protect, (req, res) => __awaiter(voi
             res.status(404).json({ message: "Resource not found." });
             return;
         }
-        const summary = yield (0, GeminiService_1.generateResourceSummary)({
+        const summary = yield (0, geminiService_1.generateResourceSummary)({
             resourceId: resource._id, title: resource.title, subject: resource.subject,
             level: resource.level, type: resource.type, content: resource.content, url: resource.url,
         });

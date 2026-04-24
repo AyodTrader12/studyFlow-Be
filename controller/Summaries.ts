@@ -4,7 +4,7 @@ import { protect } from "../middleware/Auth";
 import Resource from "../models/Resource";
 import Summary from "../models/Summary";
 import type { AuthRequest } from "../types/index";
-import { generateResourceSummary } from "../services/GeminiService";
+import { generateResourceSummary } from "../services/geminiService";
 
 
 const router = Router();
