@@ -24,7 +24,7 @@ const Resource_1 = __importDefault(require("./controller/Resource"));
 const Bookmarks_1 = __importDefault(require("./controller/Bookmarks"));
 const Progress_1 = __importDefault(require("./controller/Progress"));
 const Reminders_1 = __importDefault(require("./controller/Reminders"));
-// import summaryRoutes from "./controller/Summaries";
+const Summaries_1 = __importDefault(require("./controller/Summaries"));
 const Admin_1 = __importDefault(require("./controller/Admin"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
@@ -85,11 +85,12 @@ app.use("/api/resources", Resource_1.default);
 app.use("/api/bookmarks", Bookmarks_1.default);
 app.use("/api/progress", Progress_1.default);
 app.use("/api/reminders", Reminders_1.default);
-// app.use("/api/summaries", summaryRoutes);
+app.use("/api/summaries", Summaries_1.default);
 app.use("/api/admin", Admin_1.default);
 // app.use("/api/past-questions",PastQuestionRoutes);
 app.use("/api/ai", ai_1.default);
 app.use("/api/admin/analytics", Analytics_1.default);
+console.log("Gemini key:", process.env.GEMINI_API_KEY ? "LOADED" : "MISSING ⚠️");
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
     res.status(404).json({ message: `Route ${req.method} ${req.path} not found.` });

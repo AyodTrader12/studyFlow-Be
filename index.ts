@@ -9,7 +9,7 @@ import resourceRoutes from "./controller/Resource";
 import bookmarkRoutes from "./controller/Bookmarks";
 import progressRoutes from "./controller/Progress";
 import reminderRoutes from "./controller/Reminders";
-// import summaryRoutes from "./controller/Summaries";
+import summaryRoutes from "./controller/Summaries";
 import AdminRoutes from "./controller/Admin";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -81,11 +81,13 @@ app.use("/api/resources", resourceRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/progress",  progressRoutes);
 app.use("/api/reminders", reminderRoutes);
-// app.use("/api/summaries", summaryRoutes);
+app.use("/api/summaries", summaryRoutes);
 app.use("/api/admin",AdminRoutes);
 // app.use("/api/past-questions",PastQuestionRoutes);
 app.use("/api/ai",             aiRoutes);
 app.use("/api/admin/analytics",AnalyticsRoutes)
+
+console.log("Gemini key:", process.env.GEMINI_API_KEY ? "LOADED" : "MISSING ⚠️");
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: `Route ${req.method} ${req.path} not found.` });
