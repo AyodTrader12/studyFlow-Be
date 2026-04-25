@@ -124,9 +124,9 @@ CONTENT:
 ${content.slice(0, 6000)}
 
 Give:
-1. A clear SUMMARY (3-5 sentences) for a ${level} student
-2. Exactly 5 KEY POINTS
-3. Exactly 3 EXAM-STYLE QUESTIONS
+1. A clear SUMMARY (5-10 sentences) for a ${level} student
+2. Exactly 7 KEY POINTS
+3. Exactly 5 EXAM-STYLE QUESTIONS
 
 Reply ONLY with this JSON, no markdown or extra text:
 ${schema}`.trim();
@@ -137,9 +137,9 @@ A student just studied: "${title}"
 Subject: ${subject} | Level: ${level} | Type: ${type}
 
 Based on the Nigerian secondary school curriculum for this topic, give:
-1. A clear SUMMARY (3-5 sentences)
-2. Exactly 5 KEY POINTS
-3. Exactly 3 EXAM-STYLE QUESTIONS
+1. A clear SUMMARY (5-10 sentences)
+2. Exactly 7 KEY POINTS
+3. Exactly 5 EXAM-STYLE QUESTIONS
 
 Reply ONLY with this JSON, no markdown or extra text:
 ${schema}`.trim();
