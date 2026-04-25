@@ -1,51 +1,80 @@
 // server/src/services/geminiService.ts
-// Fixed model name: "gemini-1.5-flash" → "gemini-2.0-flash"
-// Google renamed/updated their models. gemini-2.0-flash is the current fast model.
+// FIXED: gemini-1.5-flash was deprecated by Google in early 2026.
+// Current free tier models as of April 2026:
+//   - gemini-2.5-flash-lite  → 15 RPM, 1000/day  (best for free tier)
+//   - gemini-2.5-flash       → 10 RPM, 250/day
+//   - gemini-2.5-pro         → 5 RPM,  100/day
+//
+// We use gemini-2.5-flash-lite as default — highest daily limit on free tier.
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import Summary from "../models/Summary";
-import type {
-  GenerateSummaryParams,
-  GeminiSummaryResponse,
-  ISummaryDocument,
-} from "../types/index";
+import Summary from "../models/Summary.js";
+
+// ── Model selection ───────────────────────────────────────────────────────────
+// Change this if you upgrade to a paid account:
+// Paid:  "gemini-2.5-flash" or "gemini-2.5-pro"
+// Free:  "gemini-2.5-flash-lite" (1000 req/day) ← current setting
+const MODEL_NAME = "gemini-2.5-flash-lite";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// Use gemini-2.0-flash — the current stable fast model as of 2025
-// If this also fails, change to "gemini-1.5-flash-latest" or "gemini-2.0-flash-lite"
-// gemini-1.5-flash works on the free tier (15 requests/min, 1500/day)
-const MODEL_NAME = "gemini-1.5-flash";
-
-export async function generateResourceSummary(
-  params: GenerateSummaryParams
-): Promise<ISummaryDocument> {
+export async function generateResourceSummary(params: {
+  resourceId: any;
+  title:      string;
+  subject:    string;
+  level:      string;
+  type:       string;
+  content?:   string;
+  url?:       string;
+}) {
   const { resourceId, title, subject, level, type, content } = params;
 
-  // Return cached summary if it already exists
+  // Return cached summary — never call Gemini twice for the same resource
   const cached = await Summary.findOne({ resourceId });
   if (cached) return cached;
+
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error(
+      "GEMINI_API_KEY is not set. Add it to your .env file. " +
+      "Get a free key at aistudio.google.com"
+    );
+  }
 
   let model;
   try {
     model = genAI.getGenerativeModel({ model: MODEL_NAME });
-  } catch (error) {
+  } catch {
     throw new Error(
-      `Failed to load Gemini model "${MODEL_NAME}". Check your GEMINI_API_KEY and model availability.`
+      `Could not load Gemini model "${MODEL_NAME}". ` +
+      "Check your GEMINI_API_KEY is from Google AI Studio (aistudio.google.com), " +
+      "not from Google Cloud Vertex AI."
     );
   }
 
   const prompt = buildPrompt({ title, subject, level, type, content });
 
-  // Retry up to 2 times on 429 quota errors
   const MAX_RETRIES = 2;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const result   = await model.generateContent(prompt);
-      const text     = result.response.text();
-      const clean    = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      const parsed   = JSON.parse(clean) as GeminiSummaryResponse;
+      const result = await model.generateContent(prompt);
+      const text   = result.response.text();
+      const clean  = text
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
+
+      let parsed: { summary?: string; keyPoints?: string[]; examQuestions?: string[] };
+      try {
+        parsed = JSON.parse(clean);
+      } catch {
+        // Gemini sometimes returns valid text but not JSON — wrap it
+        parsed = {
+          summary:       clean.slice(0, 500),
+          keyPoints:     [],
+          examQuestions: [],
+        };
+      }
 
       const summary = await Summary.create({
         resourceId,
@@ -57,83 +86,86 @@ export async function generateResourceSummary(
       return summary;
 
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
+      const message = (error as Error).message ?? "Unknown error";
 
-      // 429 — quota exceeded, wait and retry
+      // 429 — rate limit, wait and retry
       if (message.includes("429") || message.includes("quota")) {
         if (attempt < MAX_RETRIES) {
-          // Extract retry delay from error or default to 5 seconds
-          const retryMatch = message.match(/retry.*?(\d+)s/i);
-          const waitSecs   = retryMatch ? Math.min(parseInt(retryMatch[1]), 10) : 5;
-          console.log(`Gemini quota hit. Waiting ${waitSecs}s before retry ${attempt + 1}/${MAX_RETRIES}...`);
+          const retryMatch = message.match(/(\d+)s/);
+          const waitSecs   = retryMatch ? Math.min(parseInt(retryMatch[1]), 12) : 5;
+          console.log(`Gemini rate limit hit. Retrying in ${waitSecs}s... (${attempt + 1}/${MAX_RETRIES})`);
           await new Promise((r) => setTimeout(r, waitSecs * 1000));
-          continue; // retry
+          continue;
         }
         throw new Error(
-          "Gemini AI is temporarily unavailable due to rate limits. " +
-          "Please try again in a minute. " +
-          "The free tier allows 15 requests per minute and 1,500 per day."
+          "Gemini is temporarily rate-limited. " +
+          `Free tier limit: 15 requests/min, 1000/day on ${MODEL_NAME}. ` +
+          "Please try again in a moment."
         );
       }
 
+      // 404 — wrong model name
       if (message.includes("404") || message.includes("not found")) {
         throw new Error(
           `Gemini model "${MODEL_NAME}" not found. ` +
-          `Check your GEMINI_API_KEY is for Google AI Studio (not Vertex AI).`
+          "Your API key may be from Vertex AI instead of Google AI Studio. " +
+          "Get the correct key at aistudio.google.com"
         );
       }
 
-      if (message.includes("403") || message.includes("API_KEY")) {
-        throw new Error("Invalid Gemini API key. Check GEMINI_API_KEY in your .env file.");
+      // 403 / auth error
+      if (message.includes("403") || message.includes("API_KEY") || message.includes("invalid")) {
+        throw new Error(
+          "Invalid Gemini API key. " +
+          "Go to aistudio.google.com → Get API key → copy the key → paste into GEMINI_API_KEY in .env"
+        );
       }
 
       throw new Error(`Failed to generate summary: ${message}`);
     }
   }
 
-  throw new Error("Failed to generate summary after retries.");
+  throw new Error("Failed after retries. Please try again in a minute.");
 }
 
-function buildPrompt({
-  title, subject, level, type, content,
-}: Pick<GenerateSummaryParams, "title" | "subject" | "level" | "type" | "content">): string {
-  const jsonSchema = `{
-  "summary": "3-5 sentence summary here",
-  "keyPoints": ["point 1", "point 2", "point 3", "point 4", "point 5"],
-  "examQuestions": ["question 1", "question 2", "question 3"]
-}`;
+function buildPrompt(params: {
+  title:    string;
+  subject:  string;
+  level:    string;
+  type:     string;
+  content?: string;
+}): string {
+  const { title, subject, level, type, content } = params;
+
+  const schema = `{"summary":"...","keyPoints":["...","...","...","...","..."],"examQuestions":["...","...","..."]}`;
 
   if (type === "notes" && content) {
     return `You are a helpful tutor for Nigerian secondary school students.
 
-The following is a study note for ${subject} at the ${level} level, titled "${title}".
+Study note: "${title}" | Subject: ${subject} | Level: ${level}
 
-STUDY NOTE CONTENT:
-${content.slice(0, 8000)}
+CONTENT:
+${content.slice(0, 6000)}
 
-Please provide:
-1. A clear, simple SUMMARY (3-5 sentences) a ${level} student can easily understand
-2. Exactly 5 KEY POINTS from this lesson (max 2 sentences each)
-3. Exactly 3 EXAM-STYLE QUESTIONS a student should answer after reading this
+Give:
+1. A clear SUMMARY (3-5 sentences) for a ${level} student
+2. Exactly 5 KEY POINTS
+3. Exactly 3 EXAM-STYLE QUESTIONS
 
-Respond ONLY with valid JSON (no markdown fences, no extra text):
-${jsonSchema}
-
-Keep language simple and appropriate for a Nigerian secondary school student.`.trim();
+Reply ONLY with this JSON, no markdown or extra text:
+${schema}`.trim();
   }
 
   return `You are a helpful tutor for Nigerian secondary school students.
 
-A student just studied a resource titled "${title}" about "${subject}" (${level} level).
-Resource type: ${type}
+A student just studied: "${title}"
+Subject: ${subject} | Level: ${level} | Type: ${type}
 
-Based on this topic in the Nigerian secondary school curriculum, provide:
-1. A clear SUMMARY of what this topic is about (3-5 sentences)
-2. Exactly 5 KEY POINTS a student should understand
-3. Exactly 3 EXAM-STYLE QUESTIONS on this topic
+Based on the Nigerian secondary school curriculum for this topic, give:
+1. A clear SUMMARY (3-5 sentences)
+2. Exactly 5 KEY POINTS
+3. Exactly 3 EXAM-STYLE QUESTIONS
 
-Respond ONLY with valid JSON (no markdown fences, no extra text):
-${jsonSchema}
-
-Keep language simple and appropriate for a Nigerian secondary school student.`.trim();
+Reply ONLY with this JSON, no markdown or extra text:
+${schema}`.trim();
 }
