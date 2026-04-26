@@ -22,7 +22,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateResourceSummary = generateResourceSummary;
 const generative_ai_1 = require("@google/generative-ai");
-const Summary_js_1 = __importDefault(require("../models/Summary.js"));
+const Summary_1 = __importDefault(require("../models/Summary"));
 // ── Model selection ───────────────────────────────────────────────────────────
 // Change this if you upgrade to a paid account:
 // Paid:  "gemini-2.5-flash" or "gemini-2.5-pro"
@@ -34,7 +34,7 @@ function generateResourceSummary(params) {
         var _a, _b, _c, _d;
         const { resourceId, title, subject, level, type, content } = params;
         // Return cached summary — never call Gemini twice for the same resource
-        const cached = yield Summary_js_1.default.findOne({ resourceId });
+        const cached = yield Summary_1.default.findOne({ resourceId });
         if (cached)
             return cached;
         if (!process.env.GEMINI_API_KEY) {
@@ -72,7 +72,7 @@ function generateResourceSummary(params) {
                         examQuestions: [],
                     };
                 }
-                const summary = yield Summary_js_1.default.create({
+                const summary = yield Summary_1.default.create({
                     resourceId,
                     summary: (_a = parsed.summary) !== null && _a !== void 0 ? _a : "",
                     keyPoints: (_b = parsed.keyPoints) !== null && _b !== void 0 ? _b : [],

@@ -8,7 +8,7 @@
 // We use gemini-2.5-flash-lite as default — highest daily limit on free tier.
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import Summary from "../models/Summary.js";
+import Summary from "../models/Summary";
 
 // ── Model selection ───────────────────────────────────────────────────────────
 // Change this if you upgrade to a paid account:

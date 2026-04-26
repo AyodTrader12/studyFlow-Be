@@ -14,7 +14,7 @@ import AdminRoutes from "./controller/Admin";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import AnalyticsRoutes from "./controller/Analytics"
-// import PastQuestionRoutes from "./controller/pastQuestion"
+import PastQuestionRoutes from "./controller/PastQuestion"
 import aiRoutes from "./controller/ai";
 dotenv.config()
 
@@ -83,7 +83,7 @@ app.use("/api/progress",  progressRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/summaries", summaryRoutes);
 app.use("/api/admin",AdminRoutes);
-// app.use("/api/past-questions",PastQuestionRoutes);
+app.use("/api/past-questions",PastQuestionRoutes);
 app.use("/api/ai",             aiRoutes);
 app.use("/api/admin/analytics",AnalyticsRoutes)
 
