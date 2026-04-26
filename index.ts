@@ -14,7 +14,7 @@ import AdminRoutes from "./controller/Admin";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import AnalyticsRoutes from "./controller/Analytics"
-import PastQuestionRoutes from "./controller/PastQuestion"
+import PastQuestionRoutes from "./controller/pastQuestion"
 import aiRoutes from "./controller/ai";
 dotenv.config()
 

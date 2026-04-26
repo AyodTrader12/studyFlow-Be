@@ -29,7 +29,7 @@ const Admin_1 = __importDefault(require("./controller/Admin"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const Analytics_1 = __importDefault(require("./controller/Analytics"));
-const PastQuestion_1 = __importDefault(require("./controller/PastQuestion"));
+const pastQuestion_1 = __importDefault(require("./controller/pastQuestion"));
 const ai_1 = __importDefault(require("./controller/ai"));
 dotenv_1.default.config();
 // src/config/db.ts
@@ -87,7 +87,7 @@ app.use("/api/progress", Progress_1.default);
 app.use("/api/reminders", Reminders_1.default);
 app.use("/api/summaries", Summaries_1.default);
 app.use("/api/admin", Admin_1.default);
-app.use("/api/past-questions", PastQuestion_1.default);
+app.use("/api/past-questions", pastQuestion_1.default);
 app.use("/api/ai", ai_1.default);
 app.use("/api/admin/analytics", Analytics_1.default);
 console.log("Gemini key:", process.env.GEMINI_API_KEY ? "LOADED" : "MISSING ⚠️");
