@@ -25,7 +25,7 @@ router.post("/ask", Auth_1.protect, (req, res) => __awaiter(void 0, void 0, void
             res.status(400).json({ message: "userPrompt is required." });
             return;
         }
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
         // Combine system context + user question
         const fullPrompt = systemPrompt
             ? `${systemPrompt}\n\n---\n\n${userPrompt}`

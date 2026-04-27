@@ -23,7 +23,7 @@ router.post("/ask", protect, async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     // Combine system context + user question
     const fullPrompt = systemPrompt
