@@ -92,11 +92,14 @@ router.get("/youtube-preview", async (req: AuthRequest, res: Response): Promise<
   try {
     const url = req.query.url as string;
     if (!url) { res.status(400).json({ message: "URL is required." }); return; }
-
+     console.log("YouTube preview request for:", url);
+    console.log("YOUTUBE_API_KEY set:", process.env.YOUTUBE_API_KEY ? `YES (${process.env.YOUTUBE_API_KEY.slice(0, 8)}...)` : "NO ← THIS IS THE PROBLEM");
+ 
     const metadata = await fetchYouTubeMetadata(url);
     res.json(metadata);
   } catch (error) {
     res.status(400).json({ message: (error as Error).message || "Could not fetch YouTube details." });
+
   }
 });
 

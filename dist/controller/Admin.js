@@ -88,6 +88,8 @@ router.get("/youtube-preview", (req, res) => __awaiter(void 0, void 0, void 0, f
             res.status(400).json({ message: "URL is required." });
             return;
         }
+        console.log("YouTube preview request for:", url);
+        console.log("YOUTUBE_API_KEY set:", process.env.YOUTUBE_API_KEY ? `YES (${process.env.YOUTUBE_API_KEY.slice(0, 8)}...)` : "NO ← THIS IS THE PROBLEM");
         const metadata = yield (0, YoutubeService_1.fetchYouTubeMetadata)(url);
         res.json(metadata);
     }
