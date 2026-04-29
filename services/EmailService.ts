@@ -42,7 +42,8 @@ if (process.env.NODE_ENV === "production") {
       user: process.env.SMTP_USER,    // your email address
       pass: process.env.SMTP_PASS,    // your app password (NOT your login password)
     },
-  });
+      family: 4, // Force IPv4 (some providers have issues with IPv6)
+  }as any );
 } else {
   // ── DEVELOPMENT — Ethereal fake SMTP ─────────────────────────────────────
   // Ethereal catches emails without delivering them.
