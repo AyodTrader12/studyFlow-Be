@@ -13,6 +13,7 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcrypt";
 import User   from "../models/user";
+import jwt      from "jsonwebtoken";
 import { generateOtp, otpExpiresAt, verifyOtp } from "../services/OtpService";
 import { signToken }   from "../services/TokenService";
 import {
@@ -46,6 +47,10 @@ function sanitize(user: IUserDocument) {
     createdAt:            user.createdAt,
   };
 }
+
+const RESET_SECRET  = process.env.JWT_SECRET!;
+const RESET_EXPIRES = "15m"; // 15 minutes to complete the reset
+ 
 
 // ── Helper: set the JWT as an httpOnly cookie ─────────────────────────────────
 function setTokenCookie(res: Response, token: string): void {
@@ -280,6 +285,67 @@ router.post("/logout", (_req: Request, res: Response): void => {
   res.status(200).json({ message: "Logged out." });
 });
 
+router.post(
+  "/verify-reset-otp",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, otp } = req.body as { email?: string; otp?: string };
+ 
+      if (!email || !otp) {
+        res.status(400).json({ message: "Email and OTP code are required." });
+        return;
+      }
+ 
+      const user = await User.findOne({ email: email.toLowerCase().trim() });
+ 
+      if (!user) {
+        // Don't reveal whether the email exists
+        res.status(400).json({ message: "Incorrect code. Please check and try again." });
+        return;
+      }
+ 
+      if (user.otp.purpose !== "reset") {
+        res.status(400).json({
+          message: "No reset code found. Please request a new one.",
+        });
+        return;
+      }
+ 
+      const { valid, reason } = await verifyOtp({
+        plain:     otp.trim(),
+        hash:      user.otp.code,
+        expiresAt: user.otp.expiresAt,
+      });
+ 
+      if (!valid) {
+        res.status(400).json({ message: reason });
+        return;
+      }
+ 
+      // OTP is valid — clear it so it cannot be reused
+      user.otp = { code: null, expiresAt: null, purpose: null };
+      await user.save();
+ 
+      // Issue a short-lived resetToken that proves OTP was verified
+      // The reset page sends this back to prove it went through OTP step
+      const resetToken = jwt.sign(
+        { userId: user._id.toString(), purpose: "password-reset" },
+        RESET_SECRET,
+        { expiresIn: RESET_EXPIRES } as jwt.SignOptions
+      );
+ 
+      res.status(200).json({
+        message:    "Code verified. You can now set your new password.",
+        resetToken,
+      });
+    } catch (error) {
+      console.error("Verify reset OTP error:", (error as Error).message);
+      res.status(500).json({ message: "Verification failed. Please try again." });
+    }
+  }
+);
+ 
+
 // ── POST /api/auth/forgot-password ───────────────────────────────────────────
 router.post("/forgot-password", async (req: Request, res: Response): Promise<void> => {
   try {
@@ -310,53 +376,82 @@ router.post("/forgot-password", async (req: Request, res: Response): Promise<voi
 });
 
 // ── POST /api/auth/reset-password ────────────────────────────────────────────
-router.post("/reset-password", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, otp, newPassword } = req.body as {
-      email?:       string;
-      otp?:         string;
-      newPassword?: string;
-    };
-
-    if (!email || !otp || !newPassword) {
-      res.status(400).json({ message: "Email, OTP code and new password are required." });
-      return;
+router.post(
+  "/reset-password",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, resetToken, newPassword } = req.body as {
+        email?:       string;
+        resetToken?:  string;
+        newPassword?: string;
+      };
+ 
+      if (!email || !resetToken || !newPassword) {
+        res.status(400).json({
+          message: "Email, reset token and new password are required.",
+        });
+        return;
+      }
+ 
+      if (newPassword.length < 6) {
+        res.status(400).json({
+          message: "Password must be at least 6 characters.",
+        });
+        return;
+      }
+ 
+      // Verify the resetToken
+      let payload: { userId: string; purpose: string };
+      try {
+        payload = jwt.verify(resetToken, RESET_SECRET) as typeof payload;
+      } catch (err) {
+        const isExpired = (err as Error).name === "TokenExpiredError";
+        res.status(400).json({
+          message: isExpired
+            ? "Your reset session has expired. Please start again."
+            : "Invalid reset session. Please start again.",
+        });
+        return;
+      }
+ 
+      // Make sure the token was issued for password reset, not login
+      if (payload.purpose !== "password-reset") {
+        res.status(400).json({ message: "Invalid reset token." });
+        return;
+      }
+ 
+      const user = await User.findById(payload.userId);
+      if (!user) {
+        res.status(404).json({ message: "Account not found." });
+        return;
+      }
+ 
+      // Verify email matches (extra safety check)
+      if (user.email !== email.toLowerCase().trim()) {
+        res.status(400).json({ message: "Invalid reset request." });
+        return;
+      }
+ 
+      // Set new password
+      user.passwordHash = await bcrypt.hash(newPassword, 12);
+      await user.save();
+ 
+      // Send security notification email
+      await sendPasswordChangedEmail({
+        to:   user.email,
+        name: user.displayName,
+      });
+ 
+      res.status(200).json({
+        message: "Password reset successfully. You can now log in with your new password.",
+      });
+    } catch (error) {
+      console.error("Reset password error:", (error as Error).message);
+      res.status(500).json({ message: "Failed to reset password. Please try again." });
     }
-    if (newPassword.length < 6) {
-      res.status(400).json({ message: "Password must be at least 6 characters." });
-      return;
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
-    if (!user) { res.status(404).json({ message: "Account not found." }); return; }
-
-    if (user.otp.purpose !== "reset") {
-      res.status(400).json({ message: "No reset code found. Please request a new one." });
-      return;
-    }
-
-    const { valid, reason } = await verifyOtp({
-      plain:     otp.trim(),
-      hash:      user.otp.code,
-      expiresAt: user.otp.expiresAt,
-    });
-
-    if (!valid) { res.status(400).json({ message: reason }); return; }
-
-    // Set new password and clear OTP
-    user.passwordHash = await bcrypt.hash(newPassword, 12);
-    user.otp          = { code: null, expiresAt: null, purpose: null };
-    await user.save();
-
-    await sendPasswordChangedEmail({ to: user.email, name: user.displayName });
-
-    res.status(200).json({ message: "Password reset successfully. You can now log in." });
-  } catch (error) {
-    console.error("Reset password error:", (error as Error).message);
-    res.status(500).json({ message: "Failed to reset password. Please try again." });
   }
-});
-
+);
+ 
 // ── GET /api/auth/me ──────────────────────────────────────────────────────────
 router.get("/me", protect, (req: AuthRequest, res: Response): void => {
   res.status(200).json({ user: sanitize(req.user!) });
