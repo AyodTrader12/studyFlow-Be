@@ -335,7 +335,7 @@ router.post("/forgot-password", (req, res) => __awaiter(void 0, void 0, void 0, 
     }
     catch (error) {
         console.error("Forgot password error:", error.message);
-        res.status(500).json({ message: "Failed to send reset code. Please try again." });
+        res.status(500).json({ message: error.message });
     }
 }));
 // ── POST /api/auth/reset-password ────────────────────────────────────────────

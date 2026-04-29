@@ -371,7 +371,7 @@ router.post("/forgot-password", async (req: Request, res: Response): Promise<voi
     });
   } catch (error) {
     console.error("Forgot password error:", (error as Error).message);
-    res.status(500).json({ message: "Failed to send reset code. Please try again." });
+    res.status(500).json({ message: (error as Error).message });
   }
 });
 
