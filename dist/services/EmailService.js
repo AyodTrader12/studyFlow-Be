@@ -28,7 +28,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendVerificationOtp = sendVerificationOtp;
 exports.sendVerifiedConfirmation = sendVerifiedConfirmation;
@@ -53,8 +52,8 @@ if (process.env.NODE_ENV === "production") {
     // See Section 3 of the explanation below for provider-specific settings.
     transporter = nodemailer_1.default.createTransport({
         host: process.env.SMTP_HOST, // e.g. "smtp.gmail.com"
-        port: parseInt((_a = process.env.SMTP_PORT) !== null && _a !== void 0 ? _a : "587"),
-        secure: process.env.SMTP_PORT === "465", // true for port 465 (SSL), false for 587 (TLS)
+        port: parseInt(process.env.SMTP_PORT || "465"),
+        secure: true, // true for port 465 (SSL), false for 587 (TLS)
         auth: {
             user: process.env.SMTP_USER, // your email address
             pass: process.env.SMTP_PASS, // your app password (NOT your login password)

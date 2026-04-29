@@ -36,8 +36,8 @@ if (process.env.NODE_ENV === "production") {
   // See Section 3 of the explanation below for provider-specific settings.
   transporter = nodemailer.createTransport({
     host:   process.env.SMTP_HOST,    // e.g. "smtp.gmail.com"
-    port:   parseInt(process.env.SMTP_PORT ?? "587"),
-    secure: process.env.SMTP_PORT === "465", // true for port 465 (SSL), false for 587 (TLS)
+    port:   parseInt(process.env.SMTP_PORT || "465"),
+    secure: true, // true for port 465 (SSL), false for 587 (TLS)
     auth: {
       user: process.env.SMTP_USER,    // your email address
       pass: process.env.SMTP_PASS,    // your app password (NOT your login password)
