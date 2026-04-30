@@ -38,7 +38,7 @@ if (process.env.NODE_ENV === "production") {
     host:   process.env.SMTP_HOST,    // e.g. "smtp.gmail.com"
     port:   parseInt(process.env.SMTP_PORT || "465"), 
     secure: true,
-    service:"gmail", // true for port 465 (SSL), false for 587 (TLS)
+     // true for port 465 (SSL), false for 587 (TLS)
     auth: {
       user: process.env.SMTP_USER,    // your email address
       pass: process.env.SMTP_PASS,    // your app password (NOT your login password)
@@ -64,7 +64,8 @@ if (process.env.NODE_ENV === "production") {
         user: account.user,
         pass: account.pass,
       },
-    });
+      family: 4 // Force IPv4 (Ethereal has issues with IPv6)
+    } as any);
     console.log(
       "📧 Ethereal email account ready:",
       account.user,
