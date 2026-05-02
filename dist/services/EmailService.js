@@ -1,21 +1,17 @@
 "use strict";
 // server/src/services/emailService.ts
-// Nodemailer replacement for Resend.
-// Every template is identical — only the sending mechanism changed.
+// SendGrid implementation — same 6 email templates, only the sending mechanism changed.
 //
-// HOW NODEMAILER WORKS:
-// Nodemailer creates a "transporter" — an object that knows how to connect
-// to your email provider's SMTP server and send emails through it.
-// SMTP (Simple Mail Transfer Protocol) is the standard protocol every
-// email provider uses to receive outgoing mail.
+// ⚠️  IMPORTANT: SendGrid has NO permanent free tier as of 2025.
+//     You get a 60-day trial (100 emails/day), then must pay $19.95/month.
+//     If your trial expires, ALL emails stop — users cannot verify or reset passwords.
+//     Free alternatives: Resend (3,000/month free), Brevo (300/day free).
 //
-// You give Nodemailer:
-//   - SMTP host (e.g. smtp.gmail.com)
-//   - SMTP port (465 for SSL, 587 for TLS)
-//   - Your email address and app password
-//
-// Nodemailer opens a connection to that server, authenticates,
-// hands it the email, and the provider delivers it to the recipient.
+// HOW SENDGRID WORKS:
+// Unlike Nodemailer which connects directly to an SMTP server,
+// SendGrid uses an HTTP REST API. You call their endpoint with your API key
+// and they deliver the email through their infrastructure.
+// No SMTP ports, no TLS config — just a POST request with JSON.
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -28,6 +24,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendVerificationOtp = sendVerificationOtp;
 exports.sendVerifiedConfirmation = sendVerifiedConfirmation;
@@ -35,77 +32,48 @@ exports.sendPasswordResetOtp = sendPasswordResetOtp;
 exports.sendPasswordChangedEmail = sendPasswordChangedEmail;
 exports.sendWelcomeEmail = sendWelcomeEmail;
 exports.sendReminderEmail = sendReminderEmail;
-exports.sendInactivityEmail = sendInactivityEmail;
 exports.sendStreakMilestoneEmail = sendStreakMilestoneEmail;
-const nodemailer_1 = __importDefault(require("nodemailer"));
-const CLIENT_URL = process.env.CLIENT_URL;
-const YEAR = new Date().getFullYear();
-// ── Create the transporter once at module load ────────────────────────────────
-// The transporter is reused for every email — no need to recreate it.
-//
-// NODE_ENV check: in development we use Ethereal (a fake SMTP inbox) so you
-// don't accidentally spam real people. In production we use your real provider.
-let transporter;
-if (process.env.NODE_ENV === "production") {
-    // ── PRODUCTION — your real email provider ────────────────────────────────
-    // Works with any SMTP provider: Gmail, Outlook, Yahoo, Zoho, SendGrid, etc.
-    // See Section 3 of the explanation below for provider-specific settings.
-    transporter = nodemailer_1.default.createTransport({
-        host: process.env.SMTP_HOST, // e.g. "smtp.gmail.com"
-        port: parseInt(process.env.SMTP_PORT || "465"),
-        secure: true,
-        // true for port 465 (SSL), false for 587 (TLS)
-        auth: {
-            user: process.env.SMTP_USER, // your email address
-            pass: process.env.SMTP_PASS, // your app password (NOT your login password)
-        },
-        family: 4 // Force IPv4 (some providers have issues with IPv6)
-    });
+exports.sendInactivityEmail = sendInactivityEmail;
+const mail_1 = __importDefault(require("@sendgrid/mail"));
+// Initialise SendGrid with your API key once at module load.
+// Every email call after this uses the same key automatically.
+if (!process.env.SENDGRID_API_KEY) {
+    console.warn("⚠️  SENDGRID_API_KEY is not set. Emails will fail.");
 }
 else {
-    // ── DEVELOPMENT — Ethereal fake SMTP ─────────────────────────────────────
-    // Ethereal catches emails without delivering them.
-    // You can preview them at https://ethereal.email
-    // Credentials are auto-generated each time the server starts.
-    //
-    // To use Ethereal:
-    // 1. Start your dev server
-    // 2. Sign up → the terminal prints "Preview URL: https://ethereal.email/message/..."
-    // 3. Open that URL to see the exact email the student would receive
-    nodemailer_1.default.createTestAccount().then((account) => {
-        transporter = nodemailer_1.default.createTransport({
-            host: "smtp.ethereal.email",
-            port: 587,
-            secure: false,
-            auth: {
-                user: account.user,
-                pass: account.pass,
-            },
-            family: 4 // Force IPv4 (Ethereal has issues with IPv6)
-        });
-        console.log("📧 Ethereal email account ready:", account.user, "\n   Preview emails at: https://ethereal.email");
-    });
+    mail_1.default.setApiKey(process.env.SENDGRID_API_KEY);
 }
-// ── Helper: send an email and log the preview URL in development ──────────────
-function sendEmail(options) {
+const FROM_EMAIL = (_b = (_a = process.env.EMAIL_FROM_ADDRESS) !== null && _a !== void 0 ? _a : process.env.EMAIL_FROM) !== null && _b !== void 0 ? _b : "studyflow304@gmail.com";
+const FROM_NAME = (_c = process.env.EMAIL_FROM_NAME) !== null && _c !== void 0 ? _c : "StudyFlow";
+const CLIENT_URL = (_d = process.env.CLIENT_URL) !== null && _d !== void 0 ? _d : "https://study-flow-fe.vercel.app/";
+const YEAR = new Date().getFullYear();
+// ── Helper: send via SendGrid ─────────────────────────────────────────────────
+function sendEmail(params) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a;
-        // Wait for transporter to be ready (handles async Ethereal setup)
-        if (!transporter) {
-            yield new Promise((resolve) => setTimeout(resolve, 2000));
+        var _a, _b, _c, _d, _e;
+        const msg = {
+            to: params.to,
+            from: {
+                email: FROM_EMAIL,
+                name: FROM_NAME,
+            },
+            subject: params.subject,
+            html: params.html,
+            // Plain text fallback for email clients that don't render HTML
+            text: params.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+        };
+        try {
+            yield mail_1.default.send(msg);
         }
-        const info = yield transporter.sendMail(Object.assign({ from: (_a = process.env.EMAIL_FROM) !== null && _a !== void 0 ? _a : `"StudyFlow" <noreply@studyflow.com>` }, options));
-        // In development, print the Ethereal preview URL so you can see the email
-        if (process.env.NODE_ENV !== "production") {
-            const previewUrl = nodemailer_1.default.getTestMessageUrl(info);
-            if (previewUrl) {
-                console.log(`📧 Email preview: ${previewUrl}`);
-            }
+        catch (error) {
+            // SendGrid returns detailed error info — extract and log it
+            const sgError = (_e = (_d = (_c = (_b = (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.body) === null || _b === void 0 ? void 0 : _b.errors) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.message) !== null && _e !== void 0 ? _e : error.message;
+            console.error(`SendGrid error sending to ${params.to}:`, sgError);
+            throw new Error(`Email failed: ${sgError}`);
         }
     });
 }
-// ── Shared layout wrapper ─────────────────────────────────────────────────────
-// Every email is wrapped in this HTML shell — same header, footer, width.
+// ── Shared HTML layout ────────────────────────────────────────────────────────
 function layout(content) {
     return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -123,7 +91,12 @@ function layout(content) {
   <tr><td style="padding:36px 40px 28px;">${content}</td></tr>
   <tr>
     <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-      <p style="margin:0;color:#9ca3af;font-size:12px;">© ${YEAR} StudyFlow. All rights reserved.</p>
+      <p style="margin:0;color:#9ca3af;font-size:12px;">
+        © ${YEAR} StudyFlow. All rights reserved.
+      </p>
+      <p style="margin:6px 0 0;color:#9ca3af;font-size:11px;">
+        You are receiving this email because you have an account on StudyFlow.
+      </p>
     </td>
   </tr>
 </table>
@@ -131,7 +104,7 @@ function layout(content) {
 </table>
 </body></html>`;
 }
-// ── OTP code block HTML ───────────────────────────────────────────────────────
+// ── OTP digit boxes HTML ──────────────────────────────────────────────────────
 function otpBlock(code) {
     const digits = code.split("");
     const boxes = digits.map((d) => `<td style="padding:0 4px;">
@@ -158,7 +131,8 @@ function sendVerificationOtp(params) {
       Your account has been created. Enter the 6-digit code below to verify your email address.
     </p>
     ${otpBlock(otp)}
-    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px 20px;margin:16px 0;">
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;
+                padding:14px 20px;margin:16px 0;">
       <p style="margin:0;color:#92400e;font-size:13px;">
         This code expires in <strong>10 minutes</strong>.
         Do not share it with anyone.
@@ -174,7 +148,7 @@ function sendVerificationOtp(params) {
         });
     });
 }
-// ── 2. Verified confirmation email ───────────────────────────────────────────
+// ── 2. Verified confirmation ──────────────────────────────────────────────────
 function sendVerifiedConfirmation(params) {
     return __awaiter(this, void 0, void 0, function* () {
         const { to, name } = params;
@@ -212,13 +186,15 @@ function sendPasswordResetOtp(params) {
     </h2>
     <p style="margin:0 0 4px;color:#4b5563;font-size:14px;line-height:1.7;">
       Hi ${name}, we received a request to reset your StudyFlow password.
-      Enter the code below on the reset page.
+      Enter the code below on the verification page.
     </p>
     ${otpBlock(otp)}
-    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px 20px;margin:16px 0;">
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;
+                padding:14px 20px;margin:16px 0;">
       <p style="margin:0;color:#92400e;font-size:13px;">
         This code expires in <strong>10 minutes</strong>.
-        If you did not request a password reset, ignore this email — your password will not change.
+        If you did not request a password reset, ignore this email —
+        your password will not change.
       </p>
     </div>`;
         yield sendEmail({
@@ -245,10 +221,11 @@ function sendPasswordChangedEmail(params) {
             weekday: "long", year: "numeric", month: "long", day: "numeric",
         })}</strong>.
     </p>
-    <div style="background:#fef9c3;border:1px solid #fde047;border-radius:12px;padding:16px;margin:20px 0;">
+    <div style="background:#fef9c3;border:1px solid #fde047;border-radius:12px;
+                padding:16px;margin:20px 0;">
       <p style="margin:0;color:#854d0e;font-size:13px;line-height:1.6;">
         Didn't change your password?
-        <a href="${CLIENT_URL}/auth/reset-password" style="color:#1a2a5e;font-weight:700;">
+        <a href="${CLIENT_URL}/auth/forgot-password" style="color:#1a2a5e;font-weight:700;">
           Reset it immediately
         </a>
         and contact support.
@@ -297,7 +274,7 @@ function sendWelcomeEmail(params) {
         </td></tr>`).join("")}
     </table>
     <div style="text-align:center;margin:28px 0 8px;">
-      <a href="${CLIENT_URL}/auth/login"
+      <a href="${CLIENT_URL}/dashboard"
          style="display:inline-block;background:#1a2a5e;color:#fff;text-decoration:none;
                 padding:13px 34px;border-radius:10px;font-size:15px;font-weight:700;">
         Start Studying
@@ -321,7 +298,8 @@ function sendReminderEmail(params) {
     <p style="margin:0 0 16px;color:#4b5563;font-size:14px;line-height:1.7;">
       Hi ${name}, this is your scheduled study reminder.
     </p>
-    <div style="background:#f0f3fa;border-left:4px solid #1a2a5e;border-radius:8px;padding:16px 20px;margin:16px 0;">
+    <div style="background:#f0f3fa;border-left:4px solid #1a2a5e;border-radius:8px;
+                padding:16px 20px;margin:16px 0;">
       <p style="margin:0;color:#1a2a5e;font-size:16px;font-weight:700;">${text}</p>
       <p style="margin:6px 0 0;color:#6b7280;font-size:13px;">${date} at ${time}</p>
     </div>
@@ -339,67 +317,81 @@ function sendReminderEmail(params) {
         });
     });
 }
-// ── 6. Inactivity nudge ───────────────────────────────────────────────────────
-function sendInactivityEmail(params) {
+// ── 7. Streak milestone ───────────────────────────────────────────────────────
+function sendStreakMilestoneEmail(params) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { to, name, daysSinceLastStudy } = params;
+        const { to, name, streak } = params;
+        const emoji = streak >= 100 ? "🏆" :
+            streak >= 60 ? "🔥" :
+                streak >= 30 ? "⭐" :
+                    streak >= 14 ? "💪" : "🎉";
         const content = `
-    <h2 style="margin:0 0 16px;color:#1a2a5e;">Hi ${name}, we miss you! 👋</h2>
-    <p style="margin:0 0 16px;color:#4b5563;font-size:14px;line-height:1.7;">
-      It has been <strong>${daysSinceLastStudy} days</strong> since you last studied on StudyFlow.
-      Your subjects are waiting!
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:56px;margin-bottom:12px;">${emoji}</div>
+      <h2 style="margin:0;color:#1a2a5e;font-size:24px;font-weight:800;">
+        ${streak}-Day Streak!
+      </h2>
+    </div>
+    <p style="color:#4b5563;font-size:15px;line-height:1.7;text-align:center;">
+      Amazing work, ${name}! You have studied on StudyFlow for
+      <strong>${streak} consecutive days</strong>.
+      Keep going — consistency is the key to excellence.
     </p>
-    <p style="margin:0 0 24px;color:#4b5563;font-size:14px;line-height:1.7;">
-      Even 15 minutes a day makes a big difference. Come back and keep your momentum going.
-    </p>
-   <a href = "${(`${CLIENT_URL}/dashboard`)} "Resume Studying → >
-    <p style="margin:20px 0 0;text-align:center;">
-      <a href="${CLIENT_URL}/dashboard/settings" style="color:#9ca3af;font-size:12px;">
-        Unsubscribe from these emails
+    <div style="background:#f0f3fa;border-radius:12px;padding:16px 20px;
+                margin:20px 0;text-align:center;">
+      <p style="margin:0;color:#1a2a5e;font-size:13px;font-weight:600;">
+        ${streak >= 30
+            ? "You are in the top 5% of StudyFlow students."
+            : "You are building an excellent study habit."}
+      </p>
+    </div>
+    <div style="text-align:center;margin:20px 0 8px;">
+      <a href="${CLIENT_URL}/dashboard"
+         style="display:inline-block;background:#1a2a5e;color:#fff;text-decoration:none;
+                padding:13px 34px;border-radius:10px;font-size:15px;font-weight:700;">
+        Keep the streak going →
       </a>
-    </p>
-  `;
+    </div>`;
         yield sendEmail({
             to,
-            subject: `We miss you, ${name}! Come back to StudyFlow 📚`,
+            subject: `${emoji} You hit a ${streak}-day study streak on StudyFlow!`,
             html: layout(content),
         });
     });
 }
-// ── 5. Streak milestone email ─────────────────────────────────────────────────
-function sendStreakMilestoneEmail(params) {
+// ── 8. Inactivity nudge ───────────────────────────────────────────────────────
+function sendInactivityEmail(params) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a;
-        const { to, name, streak } = params;
-        const m = {
-            7: { emoji: "🔥", title: "7-Day Streak!", msg: "A whole week of studying — you're on fire!" },
-            14: { emoji: "⚡", title: "2-Week Streak!", msg: "Two weeks straight. Your dedication is incredible!" },
-            30: { emoji: "🏆", title: "30-Day Streak!", msg: "One full month! You are in the top 1% of students." },
-            60: { emoji: "💎", title: "60-Day Streak!", msg: "60 days! You are absolutely unstoppable." },
-        };
-        const { emoji, title, msg } = (_a = m[streak]) !== null && _a !== void 0 ? _a : {
-            emoji: "🎉", title: `${streak}-Day Streak!`,
-            msg: "Keep going — consistency is the key to success!",
-        };
+        const { to, name, daysSinceLastStudy } = params;
         const content = `
-    <div style="text-align:center;">
-      <div style="font-size:52px;margin-bottom:16px;">${emoji}</div>
-      <h2 style="margin:0 0 8px;color:#1a2a5e;font-size:22px;">${title}</h2>
-      <p style="margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.7;">
-        Hi ${name}, ${msg}
+    <h2 style="margin:0 0 8px;color:#1a2a5e;font-size:20px;font-weight:700;">
+      We miss you, ${name}!
+    </h2>
+    <p style="color:#4b5563;font-size:14px;line-height:1.7;">
+      It has been <strong>${daysSinceLastStudy} days</strong> since you last studied on StudyFlow.
+      Your study materials are waiting — even 15 minutes today will keep your momentum going.
+    </p>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;
+                padding:14px 20px;margin:16px 0;">
+      <p style="margin:0;color:#92400e;font-size:13px;line-height:1.6;">
+        💡 <strong>Tip:</strong> Start with something short — a 5-minute video or a quick
+        past question review. Small sessions add up.
       </p>
-      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;
-                  padding:16px;margin-bottom:24px;display:inline-block;">
-        <p style="margin:0;color:#ea580c;font-size:28px;font-weight:800;">${streak} days</p>
-        <p style="margin:4px 0 0;color:#9a3412;font-size:12px;">consecutive study streak</p>
-      </div>
-      <br>
-      ${(`${CLIENT_URL}/dashboard`)} "Keep It Going →"
     </div>
-  `;
+    <div style="text-align:center;margin:24px 0 8px;">
+      <a href="${CLIENT_URL}/dashboard"
+         style="display:inline-block;background:#1a2a5e;color:#fff;text-decoration:none;
+                padding:13px 34px;border-radius:10px;font-size:15px;font-weight:700;">
+        Resume Studying
+      </a>
+    </div>
+    <p style="color:#9ca3af;font-size:12px;text-align:center;margin:16px 0 0;">
+      You can turn off these reminders in your
+      <a href="${CLIENT_URL}/dashboard/settings" style="color:#1a2a5e;">account settings</a>.
+    </p>`;
         yield sendEmail({
             to,
-            subject: `${emoji} You've hit a ${streak}-day study streak on StudyFlow!`,
+            subject: `${name}, your study streak is waiting for you 📚`,
             html: layout(content),
         });
     });
