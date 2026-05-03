@@ -22,8 +22,8 @@ if (!process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM_ADDRESS ?? "studyflow304@gmail.com";
-const FROM_NAME  = process.env.EMAIL_FROM_NAME ?? "StudyFlow";
+const FROM_EMAIL = process.env.EMAIL_FROM_ADDRESS ?? "ibrahimpopoola292@gmail.com";
+const FROM_NAME  = process.env.EMAIL_FROM_NAME ?? "ibrahim";
 const CLIENT_URL = process.env.CLIENT_URL ?? "https://study-flow-fe.vercel.app";
 const YEAR       = new Date().getFullYear();
 

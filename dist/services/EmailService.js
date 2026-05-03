@@ -24,7 +24,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c, _d;
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendVerificationOtp = sendVerificationOtp;
 exports.sendVerifiedConfirmation = sendVerifiedConfirmation;
@@ -43,9 +43,9 @@ if (!process.env.SENDGRID_API_KEY) {
 else {
     mail_1.default.setApiKey(process.env.SENDGRID_API_KEY);
 }
-const FROM_EMAIL = (_b = (_a = process.env.EMAIL_FROM_ADDRESS) !== null && _a !== void 0 ? _a : process.env.EMAIL_FROM) !== null && _b !== void 0 ? _b : "studyflow304@gmail.com";
-const FROM_NAME = (_c = process.env.EMAIL_FROM_NAME) !== null && _c !== void 0 ? _c : "StudyFlow";
-const CLIENT_URL = (_d = process.env.CLIENT_URL) !== null && _d !== void 0 ? _d : "https://study-flow-fe.vercel.app/";
+const FROM_EMAIL = (_a = process.env.EMAIL_FROM_ADDRESS) !== null && _a !== void 0 ? _a : "ibrahimpopoola292@gmail.com";
+const FROM_NAME = (_b = process.env.EMAIL_FROM_NAME) !== null && _b !== void 0 ? _b : "ibrahim";
+const CLIENT_URL = (_c = process.env.CLIENT_URL) !== null && _c !== void 0 ? _c : "https://study-flow-fe.vercel.app";
 const YEAR = new Date().getFullYear();
 // ── Helper: send via SendGrid ─────────────────────────────────────────────────
 function sendEmail(params) {
