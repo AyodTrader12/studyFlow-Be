@@ -44,7 +44,7 @@ else {
     mail_1.default.setApiKey(process.env.SENDGRID_API_KEY);
 }
 const FROM_EMAIL = (_a = process.env.EMAIL_FROM_ADDRESS) !== null && _a !== void 0 ? _a : "ibrahimpopoola292@gmail.com";
-const FROM_NAME = (_b = process.env.EMAIL_FROM_NAME) !== null && _b !== void 0 ? _b : "ibrahim";
+const FROM_NAME = (_b = process.env.EMAIL_FROM_NAME) !== null && _b !== void 0 ? _b : "studyflow";
 const CLIENT_URL = (_c = process.env.CLIENT_URL) !== null && _c !== void 0 ? _c : "https://study-flow-fe.vercel.app";
 const YEAR = new Date().getFullYear();
 // ── Helper: send via SendGrid ─────────────────────────────────────────────────
