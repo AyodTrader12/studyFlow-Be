@@ -24,13 +24,15 @@ dotenv.config()
 
 
 const app:Application  = express();
+
+
 const PORT = parseInt(process.env.PORT ?? "5000", 10);
 
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cookieParser())
 app.use(cors({
-  origin:      "https://study-flow-fe.vercel.app",
+  origin:      "https://study-flow-fe.vercel.app", 
   credentials: true,
 }));
 // Change from 'same-origin' to 'same-origin-allow-popups'
